@@ -3,6 +3,7 @@
   import type { EntryStore } from '../lib/entries/entryStore';
   import { formatHeader } from '../lib/date/format';
   import { renderMarkdown, toggleTask, continueList } from '../lib/markdown/markdown';
+  import { active } from '../lib/app/activeEditor.svelte';
 
   let {
     date,
@@ -54,8 +55,25 @@
     autosize();
   }
 
+  /** Apply an external edit (from the formatting toolbar) to this row's field. */
+  function applyEdit(value: string, caret: number) {
+    const el = textarea;
+    if (!el) return;
+    el.value = value;
+    el.setSelectionRange(caret, caret);
+    touched = true;
+    text = value;
+    store.edit(date, value);
+    autosize();
+  }
+
+  function onFocus() {
+    if (textarea) active.editor = { textarea, apply: applyEdit };
+  }
+
   function onBlur() {
     void store.flush();
+    if (active.editor?.textarea === textarea) active.editor = null;
     // Non-empty → show the formatted view; empty → stay an open field.
     editing = text.trim() === '';
   }
@@ -122,6 +140,7 @@
       value={text}
       oninput={onInput}
       onkeydown={onKeydown}
+      onfocus={onFocus}
       onblur={onBlur}
       placeholder={header.isToday ? 'Write about today…' : 'Add a note…'}
       rows="1"

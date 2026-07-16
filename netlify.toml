@@ -1,0 +1,8 @@
+# Netlify continuous-deploy config. With the GitHub repo linked to the site,
+# every push to main builds and deploys automatically.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"

@@ -6,6 +6,7 @@
   import StorageNote from './components/StorageNote.svelte';
   import SignIn from './components/SignIn.svelte';
   import SyncBar from './components/SyncBar.svelte';
+  import FormatBar from './components/FormatBar.svelte';
   import { repo, entryStore, settings, syncEngine } from './lib/app/stores';
   import { isSupabaseConfigured } from './lib/sync/supabaseClient';
   import { currentUserId, onAuthChange } from './lib/sync/auth';
@@ -147,6 +148,8 @@
         {:else}
           <Calendar {today} {entrySet} onPick={pickDate} />
         {/if}
+        <!-- Global formatting toolbar; self-hides unless a day is being edited. -->
+        <FormatBar />
       {/if}
     {/if}
 
