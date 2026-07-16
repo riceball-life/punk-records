@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { active } from '../lib/app/activeEditor.svelte';
-  import { insertLinePrefix, wrapSelection, type Edit } from '../lib/markdown/format';
+  import { toggleChecklist, toggleBullet, toggleWrap, type Edit } from '../lib/markdown/format';
 
   // Distance from the bottom of the window to sit above the on-screen keyboard.
   let bottom = $state(0);
@@ -30,10 +30,10 @@
     ed.apply(edit.value, edit.caret);
   }
 
-  const checklist = () => run((v, s) => insertLinePrefix(v, s, '- [ ] '));
-  const bullet = () => run((v, s) => insertLinePrefix(v, s, '- '));
-  const bold = () => run((v, s, e) => wrapSelection(v, s, e, '**'));
-  const italic = () => run((v, s, e) => wrapSelection(v, s, e, '_'));
+  const checklist = () => run((v, s) => toggleChecklist(v, s));
+  const bullet = () => run((v, s) => toggleBullet(v, s));
+  const bold = () => run((v, s, e) => toggleWrap(v, s, e, '**'));
+  const italic = () => run((v, s, e) => toggleWrap(v, s, e, '_'));
 </script>
 
 {#if active.editor}
