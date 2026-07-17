@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import ChecklistView from '../../components/ChecklistView.svelte';
   import { todos } from '../../lib/app/stores';
-  import { newTask, markTaskDone, type Task } from '../../lib/todos/types';
+  import { newTask, markTaskDone, taskInboxOrder, type Task } from '../../lib/todos/types';
 
   const ACCENT = '#2fa7b5';
 
@@ -14,7 +14,9 @@
     const all = await todos.list();
     openTasks = all
       .filter((t) => !t.done)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      .sort(
+        (a, b) => taskInboxOrder(a) - taskInboxOrder(b) || a.createdAt.localeCompare(b.createdAt),
+      );
   }
 
   onMount(() => {
@@ -43,10 +45,17 @@
     if (t) void todos.put({ ...t, text });
   }
   function add(text: string): void {
-    void todos.put(newTask(text));
+    // New inbox tasks go to the bottom of the list.
+    void todos.put({ ...newTask(text), inboxOrder: openTasks.length });
   }
   function remove(id: string): void {
     void todos.remove(id);
+  }
+  async function reorder(orderedIds: string[]): Promise<void> {
+    for (let i = 0; i < orderedIds.length; i++) {
+      const t = openTasks.find((x) => x.id === orderedIds[i]);
+      if (t && taskInboxOrder(t) !== i) void todos.put({ ...t, inboxOrder: i });
+    }
   }
 </script>
 
@@ -71,6 +80,7 @@
     onEdit={edit}
     onAdd={add}
     onDelete={remove}
+    onReorder={reorder}
   />
 </div>
 

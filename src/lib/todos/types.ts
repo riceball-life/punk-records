@@ -22,8 +22,10 @@ export interface Task extends CollectionRecord {
   doneAt: string | null;
   /** Journal-checklist home day, or null = inbox-only (unscheduled). */
   date: DayKey | null;
-  /** Sort position within its day. */
+  /** Sort position within its day (journal checklist). */
   order: number;
+  /** Sort position in the To-do inbox (independent of the per-day `order`). */
+  inboxOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,6 +39,7 @@ export function newTask(text: string, date: DayKey | null = null, order = 0): Ta
     doneAt: null,
     date,
     order,
+    inboxOrder: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -66,6 +69,11 @@ export function taskDate(task: Task): DayKey | null {
 /** Sort position within a day (tolerant of records saved before ordering). */
 export function taskOrder(task: Task): number {
   return task.order ?? 0;
+}
+
+/** Sort position in the To-do inbox (tolerant of records saved before ordering). */
+export function taskInboxOrder(task: Task): number {
+  return task.inboxOrder ?? 0;
 }
 
 /** Group tasks by their Archives day, each day sorted by order then creation. */
