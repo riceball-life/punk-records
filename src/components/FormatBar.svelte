@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { active } from '../lib/app/activeEditor.svelte';
-  import { toggleChecklist, toggleBullet, toggleWrap, type Edit } from '../lib/markdown/format';
+  import { toggleBullet, toggleWrap, type Edit } from '../lib/markdown/format';
 
   // Distance from the bottom of the window to sit above the on-screen keyboard.
   let bottom = $state(0);
@@ -45,7 +45,6 @@
     ed.apply(edit.value, edit.caret);
   }
 
-  const checklist = () => run((v, s) => toggleChecklist(v, s));
   const bullet = () => run((v, s) => toggleBullet(v, s));
   const bold = () => run((v, s, e) => toggleWrap(v, s, e, '**'));
   const italic = () => run((v, s, e) => toggleWrap(v, s, e, '_'));
@@ -63,12 +62,6 @@
     style="bottom: {bottom}px"
     onpointerdown={(e) => e.preventDefault()}
   >
-    <button onclick={checklist} aria-label="Checklist item" title="Checklist">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="3" width="18" height="18" rx="4" />
-        <path d="M8 12l3 3 5-6" />
-      </svg>
-    </button>
     <button class="bold" onclick={bold} aria-label="Bold" title="Bold">B</button>
     <button class="italic" onclick={italic} aria-label="Italic" title="Italic">i</button>
     <button onclick={bullet} aria-label="Bullet list" title="Bullet">

@@ -11,6 +11,8 @@
     done: boolean;
     /** Optional right-aligned count badge (e.g. reminder miss-streak). */
     badge?: number;
+    /** Optional small right-aligned label (e.g. a To-do's day). */
+    meta?: string;
   }
 
   let {
@@ -59,6 +61,7 @@
       text={item.text}
       done={item.done}
       badge={item.badge ?? 0}
+      meta={item.meta ?? ''}
       {accent}
       onToggle={() => onToggle(item.id)}
       onEdit={(text) => edited(item.id, text)}

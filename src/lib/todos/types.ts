@@ -3,25 +3,43 @@ import type { DayKey } from '../db/types';
 import { toDayKey } from '../date/dateUtils';
 
 /**
- * A To-do task. Every task is a checkbox (no plain-text tasks). The single
- * source of truth for the auto-archive link: `doneAt` records *when* it was
- * completed, and Archives derives its "what I did on day X" log from that —
- * nothing is copied into the journal text. Unchecking clears `doneAt`, so it
- * leaves that day's log; re-checking files it under the new completion day.
+ * A To-do task. Every task is a checkbox (no plain-text tasks). Tasks are unified
+ * with the journal's per-day checklists:
+ *  - `date` is the day a task is "filed under" (its journal-checklist home), or
+ *    null when it lives only in the To-do inbox.
+ *  - `doneAt` records completion; for an inbox task with no `date`, its Archives
+ *    day derives from `doneAt` (preserving the original auto-archive behavior).
+ *  - `order` positions it within its day for drag-reorder.
+ *
+ * `date`/`order` are absent on records created before this feature; the read
+ * helpers below tolerate that, so no data migration is needed.
  */
 export interface Task extends CollectionRecord {
   id: string;
   text: string;
   done: boolean;
-  /** ISO timestamp of completion, or null while open. Drives the Archives projection. */
+  /** ISO instant of completion, or null while open. */
   doneAt: string | null;
+  /** Journal-checklist home day, or null = inbox-only (unscheduled). */
+  date: DayKey | null;
+  /** Sort position within its day. */
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export function newTask(text: string): Task {
+export function newTask(text: string, date: DayKey | null = null, order = 0): Task {
   const now = new Date().toISOString();
-  return { id: crypto.randomUUID(), text, done: false, doneAt: null, createdAt: now, updatedAt: now };
+  return {
+    id: crypto.randomUUID(),
+    text,
+    done: false,
+    doneAt: null,
+    date,
+    order,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 /** Complete the task now (stamps the completion instant). */
@@ -29,30 +47,39 @@ export function markTaskDone(task: Task): Task {
   return { ...task, done: true, doneAt: new Date().toISOString() };
 }
 
-/** Reopen the task (removes it from its Archives day). */
+/** Reopen the task. */
 export function markTaskOpen(task: Task): Task {
   return { ...task, done: false, doneAt: null };
 }
 
-/** The local calendar day a task was completed, or null if open. */
-export function completedDayKey(task: Task): DayKey | null {
-  if (!task.done || !task.doneAt) return null;
-  return toDayKey(new Date(task.doneAt));
+/**
+ * The day a task belongs to in Archives: its explicit `date` if set; otherwise,
+ * for a completed task, the day it was completed (so inbox completions still show
+ * under today, as before); otherwise null (unscheduled — inbox only).
+ */
+export function taskDate(task: Task): DayKey | null {
+  if (task.date != null) return task.date;
+  if (task.done && task.doneAt) return toDayKey(new Date(task.doneAt));
+  return null;
 }
 
-/** Group completed tasks by their completion day — the Archives projection index. */
-export function completedByDay(tasks: Task[]): Map<DayKey, Task[]> {
+/** Sort position within a day (tolerant of records saved before ordering). */
+export function taskOrder(task: Task): number {
+  return task.order ?? 0;
+}
+
+/** Group tasks by their Archives day, each day sorted by order then creation. */
+export function tasksByDay(tasks: Task[]): Map<DayKey, Task[]> {
   const map = new Map<DayKey, Task[]>();
   for (const t of tasks) {
-    const day = completedDayKey(t);
+    const day = taskDate(t);
     if (!day) continue;
     const bucket = map.get(day);
     if (bucket) bucket.push(t);
     else map.set(day, [t]);
   }
-  // Stable order within a day: by completion time.
   for (const bucket of map.values()) {
-    bucket.sort((a, b) => (a.doneAt ?? '').localeCompare(b.doneAt ?? ''));
+    bucket.sort((a, b) => taskOrder(a) - taskOrder(b) || a.createdAt.localeCompare(b.createdAt));
   }
   return map;
 }

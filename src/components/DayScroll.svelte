@@ -2,7 +2,8 @@
   import { onMount, tick } from 'svelte';
   import DayRow from './DayRow.svelte';
   import type { EntryStore } from '../lib/entries/entryStore';
-  import type { ArchiveEntry } from '../lib/archive/entries';
+  import type { Task } from '../lib/todos/types';
+  import type { Milestone } from '../lib/milestones/types';
   import {
     initialWindow,
     growUp,
@@ -17,16 +18,28 @@
     today,
     store,
     focus = today,
-    archiveByDay = new Map<string, ArchiveEntry[]>(),
-    onEntryAction,
+    tasksByDay = new Map<string, Task[]>(),
+    milestonesByDay = new Map<string, Milestone[]>(),
+    onAddTask,
+    onToggleTask,
+    onEditTask,
+    onDeleteTask,
+    onReorderTasks,
+    onDeleteMilestone,
   }: {
     keys: string[];
     today: string;
     store: EntryStore;
     focus?: string;
-    /** Day-log entries (completed to-dos + milestones) grouped by day. */
-    archiveByDay?: Map<string, ArchiveEntry[]>;
-    onEntryAction?: (entry: ArchiveEntry) => void;
+    /** This day's checklist tasks + logged milestones, grouped by day. */
+    tasksByDay?: Map<string, Task[]>;
+    milestonesByDay?: Map<string, Milestone[]>;
+    onAddTask?: (date: string, text: string) => void;
+    onToggleTask?: (id: string) => void;
+    onEditTask?: (id: string, text: string) => void;
+    onDeleteTask?: (id: string) => void;
+    onReorderTasks?: (date: string, orderedIds: string[]) => void;
+    onDeleteMilestone?: (id: string) => void;
   } = $props();
 
   const BUFFER = 12; // rows rendered each side of today at start
@@ -139,7 +152,19 @@
   <!-- Spacer keeps the first real row clear of the toolbar's safe area. -->
   <div class="top-pad" aria-hidden="true"></div>
   {#each visible as date (date)}
-    <DayRow {date} {today} {store} entries={archiveByDay.get(date) ?? []} {onEntryAction} />
+    <DayRow
+      {date}
+      {today}
+      {store}
+      tasks={tasksByDay.get(date) ?? []}
+      milestones={milestonesByDay.get(date) ?? []}
+      {onAddTask}
+      {onToggleTask}
+      {onEditTask}
+      {onDeleteTask}
+      {onReorderTasks}
+      {onDeleteMilestone}
+    />
   {/each}
   <div class="bottom-pad" aria-hidden="true"></div>
 </div>

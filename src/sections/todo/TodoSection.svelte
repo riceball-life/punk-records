@@ -6,9 +6,8 @@
 
   const ACCENT = '#2fa7b5';
 
-  // The active list shows OPEN tasks only. Checking a task completes it, which
-  // files it into Archives (under today) and removes it from here — uncheck it
-  // from Archives to bring it back.
+  // The active list shows OPEN tasks only (from the inbox and from journal-day
+  // checklists — they're unified). Checking one completes it and removes it here.
   let openTasks = $state<Task[]>([]);
 
   async function load(): Promise<void> {
@@ -24,7 +23,16 @@
     return off;
   });
 
-  const items = $derived(openTasks.map((t) => ({ id: t.id, text: t.text, done: false })));
+  /** Short "Jul 15" tag for a task filed under a specific journal day. */
+  function dayTag(dateKey: string | null): string | undefined {
+    if (!dateKey) return undefined;
+    const [y, m, d] = dateKey.split('-').map(Number) as [number, number, number];
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  const items = $derived(
+    openTasks.map((t) => ({ id: t.id, text: t.text, done: false, meta: dayTag(t.date) })),
+  );
 
   function toggle(id: string): void {
     const t = openTasks.find((x) => x.id === id);

@@ -3,14 +3,10 @@ import {
   newTask,
   markTaskDone,
   markTaskOpen,
-  completedDayKey,
-  completedByDay,
+  taskDate,
+  tasksByDay,
   type Task,
 } from './types';
-
-function doneOn(text: string, iso: string): Task {
-  return { ...newTask(text), done: true, doneAt: iso };
-}
 
 describe('markTaskDone / markTaskOpen', () => {
   it('done stamps a completion instant; open clears it', () => {
@@ -26,27 +22,47 @@ describe('markTaskDone / markTaskOpen', () => {
     expect(open.done).toBe(false);
     expect(open.doneAt).toBeNull();
   });
-});
 
-describe('completedDayKey', () => {
-  it('is null while open, and the local day once done', () => {
-    expect(completedDayKey(newTask('x'))).toBeNull();
-    // Midday UTC avoids timezone edge flakiness for the date portion.
-    expect(completedDayKey(doneOn('x', '2026-07-16T12:00:00.000Z'))).toBe('2026-07-16');
+  it('preserves the task’s home date across done/open', () => {
+    const t = newTask('reps', '2026-07-15', 0);
+    expect(markTaskDone(t).date).toBe('2026-07-15');
+    expect(markTaskOpen(markTaskDone(t)).date).toBe('2026-07-15');
   });
 });
 
-describe('completedByDay', () => {
-  it('buckets completed tasks by day and ignores open ones', () => {
+describe('taskDate', () => {
+  it('is null for an open, undated (inbox) task', () => {
+    expect(taskDate(newTask('x'))).toBeNull();
+  });
+  it('falls back to the completion day for a done, undated task', () => {
+    const t = { ...newTask('x'), done: true, doneAt: '2026-07-16T12:00:00.000Z' };
+    expect(taskDate(t)).toBe('2026-07-16');
+  });
+  it('uses the explicit date when set, even after completion elsewhere', () => {
+    const t = { ...newTask('x', '2026-07-15'), done: true, doneAt: '2026-07-17T12:00:00.000Z' };
+    expect(taskDate(t)).toBe('2026-07-15');
+  });
+  it('tolerates legacy records missing date/order', () => {
+    const legacy = { ...newTask('x'), done: true, doneAt: '2026-07-10T09:00:00.000Z' } as Task;
+    delete (legacy as Partial<Task>).date;
+    expect(taskDate(legacy)).toBe('2026-07-10');
+  });
+});
+
+describe('tasksByDay', () => {
+  it('groups by home day, skips unscheduled, sorts by order then createdAt', () => {
+    const dated = (text: string, date: string, order: number, createdAt: string): Task => ({
+      ...newTask(text, date, order),
+      createdAt,
+    });
     const tasks: Task[] = [
-      doneOn('a', '2026-07-16T09:00:00.000Z'),
-      doneOn('b', '2026-07-16T20:00:00.000Z'),
-      doneOn('c', '2026-07-17T10:00:00.000Z'),
-      newTask('still open'),
+      dated('b', '2026-07-15', 1, '1'),
+      dated('a', '2026-07-15', 0, '2'),
+      dated('c', '2026-07-16', 0, '3'),
+      newTask('inbox'), // undated, open → skipped
     ];
-    const map = completedByDay(tasks);
-    expect([...map.keys()].sort()).toEqual(['2026-07-16', '2026-07-17']);
-    expect(map.get('2026-07-16')!.map((t) => t.text)).toEqual(['a', 'b']); // sorted by time
-    expect(map.get('2026-07-17')!).toHaveLength(1);
+    const map = tasksByDay(tasks);
+    expect([...map.keys()].sort()).toEqual(['2026-07-15', '2026-07-16']);
+    expect(map.get('2026-07-15')!.map((t) => t.text)).toEqual(['a', 'b']); // by order
   });
 });

@@ -4,22 +4,36 @@
   import { formatHeader } from '../lib/date/format';
   import { renderMarkdown, toggleTask, continueList } from '../lib/markdown/markdown';
   import { active } from '../lib/app/activeEditor.svelte';
-  import type { ArchiveEntry } from '../lib/archive/entries';
+  import DayChecklist from './DayChecklist.svelte';
+  import type { Task } from '../lib/todos/types';
+  import type { Milestone } from '../lib/milestones/types';
 
   let {
     date,
     today,
     store,
-    entries = [],
-    onEntryAction,
+    tasks = [],
+    milestones = [],
+    onAddTask,
+    onToggleTask,
+    onEditTask,
+    onDeleteTask,
+    onReorderTasks,
+    onDeleteMilestone,
   }: {
     date: string;
     today: string;
     store: EntryStore;
-    /** Day-log entries projected under this day (completed to-dos + milestones). */
-    entries?: ArchiveEntry[];
-    /** Act on an entry: uncheck a task, or delete a milestone. */
-    onEntryAction?: (entry: ArchiveEntry) => void;
+    /** This day's checklist tasks (structured, editable, drag-reorderable). */
+    tasks?: Task[];
+    /** Milestones logged this day (read-only records, deletable). */
+    milestones?: Milestone[];
+    onAddTask?: (date: string, text: string) => void;
+    onToggleTask?: (id: string) => void;
+    onEditTask?: (id: string, text: string) => void;
+    onDeleteTask?: (id: string) => void;
+    onReorderTasks?: (date: string, orderedIds: string[]) => void;
+    onDeleteMilestone?: (id: string) => void;
   } = $props();
 
   // Seed from the cache synchronously when available so the row renders at its
@@ -171,46 +185,43 @@
     </div>
   {/if}
 
-  {#if entries.length > 0}
-    <!-- Day-log projected under this day (source of truth = the todos / milestones
-         collections — nothing lives in the journal text). -->
-    <ul class="archive-entries">
-      {#each entries as e (e.id)}
-        {#if e.kind === 'task'}
-          <!-- Completed to-do: tap to uncheck → reopens in To-do, leaves this day. -->
-          <li class="archive-task">
-            <button
-              class="atask-check"
-              onclick={() => onEntryAction?.(e)}
-              aria-label="Uncheck “{e.text}”"
-            >
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M5 12l4 4 10-11" />
-              </svg>
-            </button>
-            <span class="atask-text">{e.text}</span>
-          </li>
-        {:else}
-          <!-- Logged milestone: a record, not a checkbox. Delete with the × button. -->
-          <li class="archive-milestone">
-            <span class="ms-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="14" r="6" />
-                <path d="M9.5 8.5L7 2M14.5 8.5L17 2" />
-              </svg>
-            </span>
-            <span class="ms-text">{e.text}</span>
-            <button
-              class="ms-del"
-              onclick={() => onEntryAction?.(e)}
-              aria-label="Delete milestone “{e.text}”"
-            >
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          </li>
-        {/if}
+  <!-- This day's checklist: structured, always-real checkboxes (never `- [ ]`),
+       editable + drag-reorderable. Source of truth = the todos collection. Shown
+       on days that have tasks, plus today (so the scroll of empty days stays calm). -->
+  {#if tasks.length > 0 || date === today}
+    <DayChecklist
+      {date}
+      {tasks}
+      onAdd={(text) => onAddTask?.(date, text)}
+      onToggle={(id) => onToggleTask?.(id)}
+      onEdit={(id, text) => onEditTask?.(id, text)}
+      onDelete={(id) => onDeleteTask?.(id)}
+      onReorder={(ids) => onReorderTasks?.(date, ids)}
+    />
+  {/if}
+
+  {#if milestones.length > 0}
+    <!-- Logged milestones: records, not checkboxes. Delete with the × button. -->
+    <ul class="archive-milestones">
+      {#each milestones as m (m.id)}
+        <li class="archive-milestone">
+          <span class="ms-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="14" r="6" />
+              <path d="M9.5 8.5L7 2M14.5 8.5L17 2" />
+            </svg>
+          </span>
+          <span class="ms-text">{m.text}</span>
+          <button
+            class="ms-del"
+            onclick={() => onDeleteMilestone?.(m.id)}
+            aria-label="Delete milestone “{m.text}”"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </li>
       {/each}
     </ul>
   {/if}
@@ -334,43 +345,13 @@
     text-decoration: line-through;
   }
 
-  .archive-entries {
+  .archive-milestones {
     list-style: none;
-    margin: 10px 0 0;
+    margin: 6px 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
-  }
-
-  .archive-task {
-    display: flex;
-    align-items: flex-start;
-    gap: 9px;
-  }
-
-  .atask-check {
-    flex: none;
-    width: 18px;
-    height: 18px;
-    margin-top: 1px;
-    padding: 0;
-    border: none;
-    border-radius: 5px;
-    background: var(--today-tint);
-    color: var(--accent-text);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-
-  .atask-text {
-    color: var(--text-secondary);
-    text-decoration: line-through;
-    line-height: 1.45;
-    word-break: break-word;
-    overflow-wrap: anywhere;
   }
 
   .archive-milestone {

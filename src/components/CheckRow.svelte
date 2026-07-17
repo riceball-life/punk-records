@@ -7,6 +7,7 @@
     done,
     accent = 'var(--today-tint)',
     badge = 0,
+    meta = '',
     onToggle,
     onEdit,
     onEnter,
@@ -16,6 +17,8 @@
     accent?: string;
     /** Optional right-aligned count (e.g. reminder miss-streak). Hidden when < 1. */
     badge?: number;
+    /** Optional small right-aligned label (e.g. a To-do's day). */
+    meta?: string;
     onToggle: () => void;
     onEdit: (text: string) => void;
     onEnter?: () => void;
@@ -67,6 +70,9 @@
     onblur={commit}
     onkeydown={onKeydown}
   />
+  {#if meta}
+    <span class="meta">{meta}</span>
+  {/if}
   {#if badge >= 1}
     <span class="badge" aria-label="{badge} days missed">{badge}</span>
   {/if}
@@ -79,6 +85,12 @@
     gap: 12px;
     padding: 9px 4px;
     border-bottom: 0.5px solid var(--separator);
+  }
+
+  .meta {
+    flex: none;
+    font-size: 12px;
+    color: var(--text-secondary);
   }
 
   .check {
