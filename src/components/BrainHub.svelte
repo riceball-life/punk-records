@@ -4,7 +4,12 @@
   import SyncBar from './SyncBar.svelte';
   import StorageNote from './StorageNote.svelte';
   import CalendarToggle from './CalendarToggle.svelte';
+  import InteractiveBrainHub, {
+    type BrainZone,
+    type BrainZoneId,
+  } from './InteractiveBrainHub.svelte';
   import { sections } from '../lib/sections/registry';
+  import type { SectionId } from '../lib/sections/types';
   import { goSection } from '../lib/app/route.svelte';
   import { reminders, settings } from '../lib/app/stores';
   import {
@@ -18,32 +23,20 @@
   import { todayKey } from '../lib/date/dateUtils';
   import { currentTheme, setTheme, type Theme } from '../lib/app/theme';
 
-  // --- brain geometry ---------------------------------------------------------
-  // A stylized, symmetric brain silhouette. Sections fill lobe "slots" in
-  // registry order (NW, NE, SW, SE); the 4th slot is reserved (e.g. a future
-  // Tracker) so the layout already has a home for it.
-  const OUTLINE =
-    'M100 14 C128 10 156 18 166 40 C184 44 188 72 172 86 C186 104 170 132 146 134 ' +
-    'C140 152 116 158 100 150 C84 158 60 152 54 134 C30 132 14 104 28 86 ' +
-    'C12 72 16 44 34 40 C44 18 72 10 100 14 Z';
-  const FISSURE = 'M100 18 C108 42 92 62 100 84 C108 106 92 128 100 148';
-  const HDIV = 'M34 88 C68 80 132 80 168 88';
-  const GYRI = [
-    'M70 34 C60 44 78 50 66 60',
-    'M130 34 C140 44 122 50 134 60',
-    'M64 108 C56 118 74 122 62 132',
-    'M136 108 C144 118 126 122 138 132',
-  ];
-  const SLOTS = [
-    { x: 0, y: 0, lx: 62, ly: 50 },
-    { x: 100, y: 0, lx: 138, ly: 50 },
-    { x: 0, y: 88, lx: 62, ly: 120 },
-    { x: 100, y: 88, lx: 138, ly: 120 },
-  ];
-
-  function open(index: number): void {
-    const section = sections[index];
-    if (section?.enabled) goSection(section.id);
+  // --- brain hub navigation ---------------------------------------------------
+  // Map the four brain quarters to the app's sections, in registry order.
+  const ZONE_ORDER: BrainZoneId[] = ['upper-left', 'upper-right', 'lower-left', 'lower-right'];
+  const brainZones: BrainZone[] = sections.slice(0, 4).map((s, i) => ({
+    id: ZONE_ORDER[i]!,
+    label: s.label,
+    disabled: !s.enabled,
+  }));
+  const zoneToSection = new Map<BrainZoneId, SectionId>(
+    sections.slice(0, 4).map((s, i) => [ZONE_ORDER[i]!, s.id] as const),
+  );
+  function onZoneSelect(e: { id: BrainZoneId }): void {
+    const id = zoneToSection.get(e.id);
+    if (id) goSection(id);
   }
 
   // --- theme toggle -----------------------------------------------------------
@@ -128,67 +121,23 @@
 <StorageNote {settings} />
 
 <div class="hub">
-  <svg class="brain" viewBox="0 0 200 176" role="group" aria-label="Brain sections">
-    <defs>
-      <clipPath id="brainClip"><path d={OUTLINE} /></clipPath>
-    </defs>
+  <div class="brain-wrap">
+    <InteractiveBrainHub zones={brainZones} onselect={onZoneSelect} />
+  </div>
 
-    <g clip-path="url(#brainClip)">
-      <rect x="0" y="0" width="200" height="176" fill="var(--bg-elevated)" />
-      {#each SLOTS as slot, i}
-        {@const section = sections[i]}
-        {#if section}
-          <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-          <rect
-            class="lobe-fill"
-            class:enabled={section.enabled}
-            x={slot.x}
-            y={slot.y}
-            width="100"
-            height="88"
-            fill={section.accent}
-            opacity={section.enabled ? 0.34 : 0.12}
-            onclick={() => open(i)}
-            role={section.enabled ? 'button' : undefined}
-            tabindex={section.enabled ? 0 : undefined}
-            aria-label={section.enabled ? `Open ${section.label}` : undefined}
-            onkeydown={(e) => {
-              if (section.enabled && (e.key === 'Enter' || e.key === ' ')) open(i);
-            }}
-          />
-        {/if}
-      {/each}
-      <g class="gyri" fill="none" stroke="var(--text)" stroke-width="1.4" stroke-linecap="round">
-        {#each GYRI as d}
-          <path {d} />
-        {/each}
-      </g>
-    </g>
-
-    <!-- outline + lobe dividers on top -->
-    <path d={OUTLINE} fill="none" stroke="var(--text)" stroke-opacity="0.28" stroke-width="1.6" />
-    <path d={FISSURE} fill="none" stroke="var(--text)" stroke-opacity="0.18" stroke-width="1.4" />
-    <path d={HDIV} fill="none" stroke="var(--text)" stroke-opacity="0.18" stroke-width="1.4" />
-
-    <!-- labels (not clipped, so they never get cut off) -->
-    {#each SLOTS as slot, i}
-      {@const section = sections[i]}
-      {#if section}
-        <text
-          class="lobe-label"
-          class:disabled={!section.enabled}
-          x={slot.lx}
-          y={slot.ly}
-          text-anchor="middle"
-        >
-          {section.label}
-        </text>
-        {#if !section.enabled}
-          <text class="lobe-soon" x={slot.lx} y={slot.ly + 13} text-anchor="middle">soon</text>
-        {/if}
-      {/if}
+  <!-- Legend keeps all four destinations visible (the brain shows one label at a time). -->
+  <div class="legend">
+    {#each sections.slice(0, 4) as section (section.id)}
+      <button
+        class="legend-item"
+        onclick={() => section.enabled && goSection(section.id)}
+        disabled={!section.enabled}
+      >
+        <span class="legend-dot" style="background: {section.accent}"></span>
+        {section.label}
+      </button>
     {/each}
-  </svg>
+  </div>
 
   <section class="reminders">
     <h2>Daily Reminders</h2>
@@ -259,50 +208,45 @@
     gap: 8px;
   }
 
-  .brain {
-    width: min(340px, 82vw);
-    height: auto;
-    margin: 8px 0 20px;
+  .brain-wrap {
+    width: 100%;
+    max-width: 420px;
+    margin: 4px 0 14px;
   }
 
-  .gyri {
-    opacity: 0.12;
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 16px;
+    margin-bottom: 18px;
   }
-
-  .lobe-fill.enabled {
-    cursor: pointer;
-    transition: opacity 0.12s ease;
-  }
-  .lobe-fill.enabled:hover {
-    opacity: 0.5 !important;
-  }
-  .lobe-fill.enabled:active {
-    opacity: 0.62 !important;
-  }
-  .lobe-fill:focus-visible {
-    outline: 2px solid var(--text);
-    outline-offset: 2px;
-  }
-
-  .lobe-label {
-    fill: var(--text);
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 700;
-    pointer-events: none;
-  }
-  .lobe-label.disabled {
-    fill: var(--text-secondary);
-    opacity: 0.7;
-  }
-  .lobe-soon {
-    fill: var(--text-secondary);
-    font-family: var(--font);
-    font-size: 8px;
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    pointer-events: none;
+    padding: 4px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .legend-item:disabled {
+    color: var(--text-secondary);
+    opacity: 0.55;
+    cursor: default;
+  }
+  .legend-item:active:not(:disabled) {
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex: none;
   }
 
   .reminders {
