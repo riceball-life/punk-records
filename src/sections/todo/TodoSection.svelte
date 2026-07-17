@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import TaskList from '../../components/TaskList.svelte';
+  import CalendarToggle from '../../components/CalendarToggle.svelte';
   import { todos } from '../../lib/app/stores';
   import {
     newTask,
@@ -90,7 +91,7 @@
 <header class="section-header">
   <span class="spacer" aria-hidden="true"></span>
   <h1>To-do</h1>
-  <span class="spacer" aria-hidden="true"></span>
+  <div class="right"><CalendarToggle /></div>
 </header>
 
 <div class="body">
@@ -146,6 +147,11 @@
     font-size: 17px;
     font-weight: 700;
     letter-spacing: -0.02em;
+  }
+  .section-header .right {
+    justify-self: end;
+    display: flex;
+    align-items: center;
   }
 
   .body {

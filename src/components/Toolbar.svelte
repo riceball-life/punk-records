@@ -2,16 +2,13 @@
   import type { EntryStore } from '../lib/entries/entryStore';
   import { todayKey } from '../lib/date/dateUtils';
   import { currentTheme, setTheme, type Theme } from '../lib/app/theme';
+  import CalendarToggle from './CalendarToggle.svelte';
 
   let {
     store,
-    view,
-    onToggleView,
     title = 'Punk Records',
   }: {
     store: EntryStore;
-    view: 'days' | 'calendar';
-    onToggleView: () => void;
     title?: string;
   } = $props();
 
@@ -54,30 +51,10 @@
 </script>
 
 <header class="toolbar">
-  <button
-    class="icon left"
-    onclick={onToggleView}
-    aria-label={view === 'days' ? 'Calendar view' : 'List view'}
-    title={view === 'days' ? 'Calendar' : 'List'}
-  >
-    {#if view === 'days'}
-      <!-- calendar -->
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
-        <path d="M3 9h18M8 2.5v4M16 2.5v4" />
-      </svg>
-    {:else}
-      <!-- list -->
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 6h11M9 12h11M9 18h11" />
-        <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
-        <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
-        <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
-      </svg>
-    {/if}
-  </button>
+  <span class="spacer" aria-hidden="true"></span>
   <h1>{title}</h1>
   <div class="right">
+    <CalendarToggle />
     <button
       class="icon"
       onclick={toggleTheme}
@@ -134,10 +111,6 @@
     font-size: 17px;
     font-weight: 700;
     letter-spacing: -0.02em;
-  }
-
-  .icon.left {
-    justify-self: start;
   }
 
   .right {

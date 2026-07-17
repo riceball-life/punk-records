@@ -137,10 +137,6 @@
     void milestones.remove(id);
   }
 
-  function toggleView(): void {
-    archivesView.mode = archivesView.mode === 'days' ? 'calendar' : 'days';
-  }
-
   /** Calendar tap: make sure the day is in the list, then jump to it to edit. */
   function pickDate(date: string): void {
     if (!keys.includes(date)) {
@@ -151,7 +147,7 @@
   }
 </script>
 
-<Toolbar store={entryStore} view={archivesView.mode} onToggleView={toggleView} title="Archives" />
+<Toolbar store={entryStore} title="Archives" />
 {#if ready}
   {#if archivesView.mode === 'days'}
     <!-- Keyed by focus + refreshToken so a calendar tap or a pull-driven list

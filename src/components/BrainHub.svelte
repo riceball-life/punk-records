@@ -3,6 +3,7 @@
   import ChecklistView from './ChecklistView.svelte';
   import SyncBar from './SyncBar.svelte';
   import StorageNote from './StorageNote.svelte';
+  import CalendarToggle from './CalendarToggle.svelte';
   import { sections } from '../lib/sections/registry';
   import { goSection } from '../lib/app/route.svelte';
   import { reminders, settings } from '../lib/app/stores';
@@ -101,12 +102,14 @@
 <header class="hub-header">
   <span class="spacer" aria-hidden="true"></span>
   <h1>Punk Records</h1>
-  <button
-    class="icon"
-    onclick={toggleTheme}
-    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-    title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-  >
+  <div class="right">
+    <CalendarToggle />
+    <button
+      class="icon"
+      onclick={toggleTheme}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+    >
     {#if theme === 'dark'}
       <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="4" />
@@ -117,7 +120,8 @@
         <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
       </svg>
     {/if}
-  </button>
+    </button>
+  </div>
 </header>
 
 <SyncBar />
@@ -221,8 +225,14 @@
     letter-spacing: -0.02em;
   }
 
-  .icon {
+  .right {
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;

@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import BrainHub from './components/BrainHub.svelte';
   import BrainButton from './components/BrainButton.svelte';
-  import CalendarButton from './components/CalendarButton.svelte';
   import SignIn from './components/SignIn.svelte';
   import FormatBar from './components/FormatBar.svelte';
   import { entryStore, syncables } from './lib/app/stores';
@@ -80,9 +79,8 @@
       {:else if SectionComponent}
         <SectionComponent />
       {/if}
-      <!-- Global chrome: return-to-hub + calendar shortcut + editing toolbar. -->
+      <!-- Global chrome: return-to-hub button + the editing formatting toolbar. -->
       <BrainButton />
-      <CalendarButton />
       <FormatBar />
     {/if}
 

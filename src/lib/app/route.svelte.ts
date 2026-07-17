@@ -37,3 +37,9 @@ export function calendarShowing(): boolean {
     archivesView.mode === 'calendar'
   );
 }
+
+/** Header calendar button: open the calendar from anywhere, or (on the calendar) go back to the list. */
+export function toggleCalendar(): void {
+  if (calendarShowing()) archivesView.mode = 'days';
+  else openCalendar();
+}

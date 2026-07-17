@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import BenchmarkEditor from './BenchmarkEditor.svelte';
+  import CalendarToggle from '../../components/CalendarToggle.svelte';
   import { benchmarks } from '../../lib/app/stores';
   import {
     newBenchmark,
@@ -43,11 +44,14 @@
   <header class="list-header">
     <span class="spacer" aria-hidden="true"></span>
     <h1>Tracker</h1>
-    <button class="icon" onclick={createBenchmark} aria-label="New benchmark" title="New benchmark">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-    </button>
+    <div class="right">
+      <CalendarToggle />
+      <button class="icon" onclick={createBenchmark} aria-label="New benchmark" title="New benchmark">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+    </div>
   </header>
 
   <div class="list">
@@ -92,9 +96,15 @@
     font-weight: 700;
     letter-spacing: -0.02em;
   }
-  .icon {
+  .right {
     grid-column: 3;
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
