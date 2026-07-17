@@ -54,8 +54,27 @@
 </script>
 
 <header class="toolbar">
-  <button class="link" onclick={onToggleView}>
-    {view === 'days' ? 'Calendar' : 'List'}
+  <button
+    class="icon left"
+    onclick={onToggleView}
+    aria-label={view === 'days' ? 'Calendar view' : 'List view'}
+    title={view === 'days' ? 'Calendar' : 'List'}
+  >
+    {#if view === 'days'}
+      <!-- calendar -->
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+        <path d="M3 9h18M8 2.5v4M16 2.5v4" />
+      </svg>
+    {:else}
+      <!-- list -->
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 6h11M9 12h11M9 18h11" />
+        <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
+      </svg>
+    {/if}
   </button>
   <h1>{title}</h1>
   <div class="right">
@@ -117,16 +136,8 @@
     letter-spacing: -0.02em;
   }
 
-  .link {
-    border: none;
-    background: transparent;
-    color: var(--today-tint);
-    font-size: 16px;
-    font-weight: 500;
-    padding: 6px 4px;
-    cursor: pointer;
+  .icon.left {
     justify-self: start;
-    text-align: left;
   }
 
   .right {

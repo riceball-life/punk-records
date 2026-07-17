@@ -4,6 +4,7 @@
   import DayScroll from '../../components/DayScroll.svelte';
   import Calendar from '../../components/Calendar.svelte';
   import { repo, entryStore, syncEngine, todos, milestones } from '../../lib/app/stores';
+  import { archivesView } from '../../lib/app/route.svelte';
   import { buildDayList } from '../../lib/entries/dayList';
   import { tasksByDay, taskOrder, newTask, markTaskDone, markTaskOpen, type Task } from '../../lib/todos/types';
   import { milestonesByDay, type Milestone } from '../../lib/milestones/types';
@@ -14,7 +15,6 @@
   let entrySet = $state<Set<string>>(new Set());
   let today = $state(todayKey());
   let focus = $state(todayKey());
-  let view = $state<'days' | 'calendar'>('days');
   let ready = $state(false);
   // Bumped to remount the day-scroll when the set of days changes from a pull.
   let refreshToken = $state(0);
@@ -138,7 +138,7 @@
   }
 
   function toggleView(): void {
-    view = view === 'days' ? 'calendar' : 'days';
+    archivesView.mode = archivesView.mode === 'days' ? 'calendar' : 'days';
   }
 
   /** Calendar tap: make sure the day is in the list, then jump to it to edit. */
@@ -147,13 +147,13 @@
       keys = [...keys, date].sort(compareDayKeys);
     }
     focus = date;
-    view = 'days';
+    archivesView.mode = 'days';
   }
 </script>
 
-<Toolbar store={entryStore} {view} onToggleView={toggleView} title="Archives" />
+<Toolbar store={entryStore} view={archivesView.mode} onToggleView={toggleView} title="Archives" />
 {#if ready}
-  {#if view === 'days'}
+  {#if archivesView.mode === 'days'}
     <!-- Keyed by focus + refreshToken so a calendar tap or a pull-driven list
          change remounts the scroll, landing/anchoring cleanly. -->
     {#key `${focus}|${refreshToken}`}

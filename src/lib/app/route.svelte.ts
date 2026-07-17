@@ -16,3 +16,24 @@ export function goHub(): void {
 export function goSection(id: SectionId): void {
   nav.route = { screen: 'section', id };
 }
+
+/**
+ * Which sub-view the Archives section shows. Shared (not local to Archives) so a
+ * global calendar button can jump straight to the calendar from any page.
+ */
+export const archivesView = $state<{ mode: 'days' | 'calendar' }>({ mode: 'days' });
+
+/** Open the calendar from anywhere: switch Archives to calendar and navigate in. */
+export function openCalendar(): void {
+  archivesView.mode = 'calendar';
+  goSection('archives');
+}
+
+/** True when the Archives calendar is currently on screen. */
+export function calendarShowing(): boolean {
+  return (
+    nav.route.screen === 'section' &&
+    nav.route.id === 'archives' &&
+    archivesView.mode === 'calendar'
+  );
+}
