@@ -26,6 +26,8 @@ export interface Task extends CollectionRecord {
   order: number;
   /** Sort position in the To-do inbox (independent of the per-day `order`). */
   inboxOrder: number;
+  /** Free-form grouping label in the To-do inbox; '' (or missing) = uncategorized. */
+  category: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,6 +42,7 @@ export function newTask(text: string, date: DayKey | null = null, order = 0): Ta
     date,
     order,
     inboxOrder: 0,
+    category: '',
     createdAt: now,
     updatedAt: now,
   };
@@ -74,6 +77,57 @@ export function taskOrder(task: Task): number {
 /** Sort position in the To-do inbox (tolerant of records saved before ordering). */
 export function taskInboxOrder(task: Task): number {
   return task.inboxOrder ?? 0;
+}
+
+/** A task's To-do category, normalized (tolerant of records saved before categories). */
+export function taskCategory(task: Task): string {
+  return (task.category ?? '').trim();
+}
+
+/** Distinct non-empty To-do categories in use, sorted — for suggestions. */
+export function distinctTaskCategories(tasks: Task[]): string[] {
+  const set = new Set<string>();
+  for (const t of tasks) {
+    const c = taskCategory(t);
+    if (c) set.add(c);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+export interface TaskGroup {
+  category: string;
+  label: string;
+  items: Task[];
+}
+
+/**
+ * Group tasks by To-do category for the inbox: named categories A–Z first, then
+ * uncategorized (labeled "Other") last. Items within a group sort by inbox order.
+ * `extraCategories` seeds empty groups (e.g. a just-created category with no tasks yet).
+ */
+export function groupTasksByCategory(tasks: Task[], extraCategories: string[] = []): TaskGroup[] {
+  const map = new Map<string, Task[]>();
+  for (const c of extraCategories) if (c.trim()) map.set(c.trim(), []);
+  for (const t of tasks) {
+    const cat = taskCategory(t);
+    const bucket = map.get(cat);
+    if (bucket) bucket.push(t);
+    else map.set(cat, [t]);
+  }
+  const groups: TaskGroup[] = [...map.entries()].map(([category, items]) => ({
+    category,
+    label: category || 'Other',
+    items: items.sort(
+      (a, b) => taskInboxOrder(a) - taskInboxOrder(b) || a.createdAt.localeCompare(b.createdAt),
+    ),
+  }));
+  groups.sort((a, b) => {
+    if (a.category === b.category) return 0;
+    if (a.category === '') return 1; // uncategorized last
+    if (b.category === '') return -1;
+    return a.category.localeCompare(b.category);
+  });
+  return groups;
 }
 
 /** Group tasks by their Archives day, each day sorted by order then creation. */

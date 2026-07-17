@@ -5,6 +5,9 @@ import {
   markTaskOpen,
   taskDate,
   tasksByDay,
+  taskCategory,
+  distinctTaskCategories,
+  groupTasksByCategory,
   type Task,
 } from './types';
 
@@ -64,5 +67,41 @@ describe('tasksByDay', () => {
     const map = tasksByDay(tasks);
     expect([...map.keys()].sort()).toEqual(['2026-07-15', '2026-07-16']);
     expect(map.get('2026-07-15')!.map((t) => t.text)).toEqual(['a', 'b']); // by order
+  });
+});
+
+describe('taskCategory / distinctTaskCategories', () => {
+  it('normalizes and lists distinct non-empty categories, sorted', () => {
+    const withCat = (cat: string): Task => ({ ...newTask('x'), category: cat });
+    const tasks = [withCat('Work'), withCat(' home '), withCat('Work'), withCat('')];
+    expect(taskCategory(withCat(' home '))).toBe('home');
+    // localeCompare is case-insensitive: 'home' sorts before 'Work'.
+    expect(distinctTaskCategories(tasks)).toEqual(['home', 'Work']);
+  });
+});
+
+describe('groupTasksByCategory', () => {
+  const inCat = (text: string, category: string, inboxOrder: number): Task => ({
+    ...newTask(text),
+    category,
+    inboxOrder,
+  });
+
+  it('groups A–Z with "Other" last, items by inbox order', () => {
+    const tasks = [
+      inCat('deploy', 'Work', 1),
+      inCat('milk', '', 0),
+      inCat('run', 'Health', 0),
+      inCat('email', 'Work', 0),
+    ];
+    const groups = groupTasksByCategory(tasks);
+    expect(groups.map((g) => g.label)).toEqual(['Health', 'Work', 'Other']);
+    expect(groups[1]!.items.map((t) => t.text)).toEqual(['email', 'deploy']); // by inboxOrder
+  });
+
+  it('seeds empty groups for extra (just-created) categories', () => {
+    const groups = groupTasksByCategory([], ['Errands']);
+    expect(groups.map((g) => g.category)).toEqual(['Errands']);
+    expect(groups[0]!.items).toEqual([]);
   });
 });

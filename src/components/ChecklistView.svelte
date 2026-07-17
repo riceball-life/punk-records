@@ -22,6 +22,7 @@
     items,
     accent = 'var(--today-tint)',
     placeholder = 'New reminder',
+    dndType = 'todo-inbox',
     onToggle,
     onEdit,
     onAdd,
@@ -31,6 +32,8 @@
     items: Item[];
     accent?: string;
     placeholder?: string;
+    /** Shared across lists that should allow dragging items between them. */
+    dndType?: string;
     onToggle: (id: string) => void;
     onEdit: (id: string, text: string) => void;
     onAdd: (text: string) => void;
@@ -98,7 +101,7 @@
   {#if reorderable}
     <div
       class="rows"
-      use:dndzone={{ items: ordered, dragDisabled, flipDurationMs: 150, type: 'todo-inbox', dropTargetStyle: {} }}
+      use:dndzone={{ items: ordered, dragDisabled, flipDurationMs: 150, type: dndType, dropTargetStyle: {} }}
       onconsider={consider}
       onfinalize={finalize}
     >
