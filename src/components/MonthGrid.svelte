@@ -6,12 +6,15 @@
     month0,
     today,
     entrySet,
+    milestoneSet = new Set<string>(),
     onPick,
   }: {
     year: number;
     month0: number;
     today: string;
     entrySet: Set<string>;
+    /** Days with at least one logged milestone — get a gold dot. */
+    milestoneSet?: Set<string>;
     onPick: (date: string) => void;
   } = $props();
 
@@ -32,10 +35,13 @@
           class="day"
           class:is-today={cell === today}
           onclick={() => onPick(cell)}
-          aria-label={`${label} ${dayNum(cell)}${entrySet.has(cell) ? ', has entry' : ''}`}
+          aria-label={`${label} ${dayNum(cell)}${entrySet.has(cell) ? ', has entry' : ''}${milestoneSet.has(cell) ? ', milestone' : ''}`}
         >
           <span class="num">{dayNum(cell)}</span>
-          <span class="dot" class:visible={entrySet.has(cell)} aria-hidden="true"></span>
+          <span class="dots" aria-hidden="true">
+            {#if entrySet.has(cell)}<span class="dot entry"></span>{/if}
+            {#if milestoneSet.has(cell)}<span class="dot milestone"></span>{/if}
+          </span>
         </button>
       {:else}
         <span class="blank" aria-hidden="true"></span>
@@ -93,16 +99,29 @@
     line-height: 1;
   }
 
-  /* Days with an entry: a blue dot beneath the number (iOS Calendar style). */
+  /* Dot row beneath the number (iOS Calendar style). Always present so day-cell
+     heights stay uniform whether or not there are dots. */
+  .dots {
+    height: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+
   .dot {
     width: 6px;
     height: 6px;
     border-radius: 999px;
-    background: transparent;
   }
 
-  .dot.visible {
+  .dot.entry {
     background: var(--entry-tint);
+  }
+
+  /* Days with a logged milestone: a gold dot. */
+  .dot.milestone {
+    background: #f5c518;
   }
 
   /* Today: filled amber disc around the number. */

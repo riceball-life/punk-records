@@ -7,10 +7,12 @@
   let {
     today,
     entrySet,
+    milestoneSet = new Set<string>(),
     onPick,
   }: {
     today: string;
     entrySet: Set<string>;
+    milestoneSet?: Set<string>;
     onPick: (date: string) => void;
   } = $props();
 
@@ -98,7 +100,7 @@
     {#each months as idx (idx)}
       {@const p = monthParts(idx)}
       <div data-month={idx}>
-        <MonthGrid year={p.year} month0={p.month0} {today} {entrySet} {onPick} />
+        <MonthGrid year={p.year} month0={p.month0} {today} {entrySet} {milestoneSet} {onPick} />
       </div>
     {/each}
   </div>
@@ -134,5 +136,7 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overflow-anchor: none;
+    /* Clear the floating brain button below the last month. */
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
   }
 </style>

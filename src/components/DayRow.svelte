@@ -4,12 +4,23 @@
   import { formatHeader } from '../lib/date/format';
   import { renderMarkdown, toggleTask, continueList } from '../lib/markdown/markdown';
   import { active } from '../lib/app/activeEditor.svelte';
+  import type { ArchiveEntry } from '../lib/archive/entries';
 
   let {
     date,
     today,
     store,
-  }: { date: string; today: string; store: EntryStore } = $props();
+    entries = [],
+    onEntryAction,
+  }: {
+    date: string;
+    today: string;
+    store: EntryStore;
+    /** Day-log entries projected under this day (completed to-dos + milestones). */
+    entries?: ArchiveEntry[];
+    /** Act on an entry: uncheck a task, or delete a milestone. */
+    onEntryAction?: (entry: ArchiveEntry) => void;
+  } = $props();
 
   // Seed from the cache synchronously when available so the row renders at its
   // correct height on first paint (accurate landing / scroll anchoring).
@@ -159,6 +170,50 @@
       {@html html}
     </div>
   {/if}
+
+  {#if entries.length > 0}
+    <!-- Day-log projected under this day (source of truth = the todos / milestones
+         collections — nothing lives in the journal text). -->
+    <ul class="archive-entries">
+      {#each entries as e (e.id)}
+        {#if e.kind === 'task'}
+          <!-- Completed to-do: tap to uncheck → reopens in To-do, leaves this day. -->
+          <li class="archive-task">
+            <button
+              class="atask-check"
+              onclick={() => onEntryAction?.(e)}
+              aria-label="Uncheck “{e.text}”"
+            >
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12l4 4 10-11" />
+              </svg>
+            </button>
+            <span class="atask-text">{e.text}</span>
+          </li>
+        {:else}
+          <!-- Logged milestone: a record, not a checkbox. Delete with the × button. -->
+          <li class="archive-milestone">
+            <span class="ms-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="14" r="6" />
+                <path d="M9.5 8.5L7 2M14.5 8.5L17 2" />
+              </svg>
+            </span>
+            <span class="ms-text">{e.text}</span>
+            <button
+              class="ms-del"
+              onclick={() => onEntryAction?.(e)}
+              aria-label="Delete milestone “{e.text}”"
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </li>
+        {/if}
+      {/each}
+    </ul>
+  {/if}
 </section>
 
 <style>
@@ -277,5 +332,80 @@
   .rendered :global(.md-task.done .md-task-text) {
     color: var(--text-secondary);
     text-decoration: line-through;
+  }
+
+  .archive-entries {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .archive-task {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+  }
+
+  .atask-check {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    padding: 0;
+    border: none;
+    border-radius: 5px;
+    background: var(--today-tint);
+    color: var(--accent-text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .atask-text {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+    line-height: 1.45;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .archive-milestone {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+  }
+
+  .ms-icon {
+    flex: none;
+    margin-top: 1px;
+    color: #e08a2b; /* tracker amber */
+    display: inline-flex;
+  }
+
+  .ms-text {
+    flex: 1;
+    min-width: 0;
+    color: var(--text);
+    line-height: 1.45;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .ms-del {
+    flex: none;
+    margin-top: -1px;
+    padding: 2px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .ms-del:active {
+    background: color-mix(in srgb, var(--text) 8%, transparent);
   }
 </style>

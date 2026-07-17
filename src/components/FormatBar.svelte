@@ -5,6 +5,7 @@
 
   // Distance from the bottom of the window to sit above the on-screen keyboard.
   let bottom = $state(0);
+  let barEl = $state<HTMLElement>();
 
   function updatePosition() {
     const vv = window.visualViewport;
@@ -19,7 +20,21 @@
     return () => {
       vv?.removeEventListener('resize', updatePosition);
       vv?.removeEventListener('scroll', updatePosition);
+      document.documentElement.style.removeProperty('--edit-inset');
     };
+  });
+
+  // Publish how much space the keyboard + this bar occupy at the bottom, so the
+  // editing scroll area can reserve it (as trailing space AND scroll-padding) and
+  // keep the line being edited above the bar. Cleared when nothing is focused.
+  $effect(() => {
+    const root = document.documentElement.style;
+    if (active.editor && barEl) {
+      const height = barEl.offsetHeight || 48;
+      root.setProperty('--edit-inset', `${bottom + height + 24}px`);
+    } else {
+      root.removeProperty('--edit-inset');
+    }
   });
 
   function run(fn: (value: string, start: number, end: number) => Edit) {
@@ -40,6 +55,7 @@
   <!-- preventDefault on pointerdown keeps the textarea focused (and its selection)
        when a button is tapped, so formatting applies to the right place. -->
   <div
+    bind:this={barEl}
     class="formatbar"
     role="toolbar"
     tabindex="-1"

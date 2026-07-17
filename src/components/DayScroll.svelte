@@ -2,6 +2,7 @@
   import { onMount, tick } from 'svelte';
   import DayRow from './DayRow.svelte';
   import type { EntryStore } from '../lib/entries/entryStore';
+  import type { ArchiveEntry } from '../lib/archive/entries';
   import {
     initialWindow,
     growUp,
@@ -16,7 +17,17 @@
     today,
     store,
     focus = today,
-  }: { keys: string[]; today: string; store: EntryStore; focus?: string } = $props();
+    archiveByDay = new Map<string, ArchiveEntry[]>(),
+    onEntryAction,
+  }: {
+    keys: string[];
+    today: string;
+    store: EntryStore;
+    focus?: string;
+    /** Day-log entries (completed to-dos + milestones) grouped by day. */
+    archiveByDay?: Map<string, ArchiveEntry[]>;
+    onEntryAction?: (entry: ArchiveEntry) => void;
+  } = $props();
 
   const BUFFER = 12; // rows rendered each side of today at start
   const BATCH = 10; // rows added per load
@@ -128,7 +139,7 @@
   <!-- Spacer keeps the first real row clear of the toolbar's safe area. -->
   <div class="top-pad" aria-hidden="true"></div>
   {#each visible as date (date)}
-    <DayRow {date} {today} {store} />
+    <DayRow {date} {today} {store} entries={archiveByDay.get(date) ?? []} {onEntryAction} />
   {/each}
   <div class="bottom-pad" aria-hidden="true"></div>
 </div>
@@ -141,6 +152,9 @@
     /* We compensate scroll position manually on prepend; don't let the browser
        also anchor, or the two corrections fight and cause a jump. */
     overflow-anchor: none;
+    /* While editing, keep the focused line above the keyboard + format bar.
+       --edit-inset is published by FormatBar (keyboard + bar height); 0 otherwise. */
+    scroll-padding-bottom: var(--edit-inset, 0px);
   }
 
   .top-pad {
@@ -148,6 +162,8 @@
   }
 
   .bottom-pad {
-    height: max(40px, env(safe-area-inset-bottom));
+    /* Normally clears the floating brain button; while editing, expands to the
+       keyboard + format-bar height so the last day can scroll fully above them. */
+    height: var(--edit-inset, calc(84px + env(safe-area-inset-bottom)));
   }
 </style>

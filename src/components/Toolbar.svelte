@@ -7,10 +7,12 @@
     store,
     view,
     onToggleView,
+    title = 'Punk Records',
   }: {
     store: EntryStore;
     view: 'days' | 'calendar';
     onToggleView: () => void;
+    title?: string;
   } = $props();
 
   let exporting = $state(false);
@@ -55,7 +57,7 @@
   <button class="link" onclick={onToggleView}>
     {view === 'days' ? 'Calendar' : 'List'}
   </button>
-  <h1>Punk Records</h1>
+  <h1>{title}</h1>
   <div class="right">
     <button
       class="icon"
