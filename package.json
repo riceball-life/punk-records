@@ -14,8 +14,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.6",
-    "idb": "^8.0.0",
-    "svelte-dnd-action": "^0.9.74"
+    "idb": "^8.0.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^4.0.0",

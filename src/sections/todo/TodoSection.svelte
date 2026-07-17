@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import ChecklistView from '../../components/ChecklistView.svelte';
+  import TaskList from '../../components/TaskList.svelte';
   import { todos } from '../../lib/app/stores';
   import {
     newTask,
@@ -9,12 +9,11 @@
     taskCategory,
     groupTasksByCategory,
     type Task,
-    type TaskGroup,
   } from '../../lib/todos/types';
 
   const ACCENT = '#2fa7b5';
   // Shared across every category list so tasks can be dragged between categories.
-  const DND_TYPE = 'todo-inbox';
+  const GROUP = 'todo';
 
   let openTasks = $state<Task[]>([]);
   // Just-created categories with no tasks yet (so they can be added to).
@@ -46,10 +45,6 @@
     if (!dateKey) return undefined;
     const [y, m, d] = dateKey.split('-').map(Number) as [number, number, number];
     return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  }
-
-  function itemsOf(group: TaskGroup) {
-    return group.items.map((t) => ({ id: t.id, text: t.text, done: false, meta: dayTag(t.date) }));
   }
 
   function toggle(id: string): void {
@@ -103,16 +98,18 @@
     {#if hasCategories}
       <h2 class="cat">{group.label}</h2>
     {/if}
-    <ChecklistView
-      items={itemsOf(group)}
+    <TaskList
+      tasks={group.items}
+      group={GROUP}
+      listId={group.category}
       accent={ACCENT}
       placeholder="New task"
-      dndType={DND_TYPE}
+      metaOf={(t) => dayTag(t.date)}
       onToggle={toggle}
       onEdit={edit}
       onAdd={(text) => add(group.category, text)}
       onDelete={remove}
-      onReorder={(ids) => reorder(group.category, ids)}
+      onReorder={(listId, ids) => reorder(listId, ids)}
     />
   {/each}
 

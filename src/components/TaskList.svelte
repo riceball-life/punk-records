@@ -1,36 +1,34 @@
 <script lang="ts">
-  import CheckRow from './CheckRow.svelte';
-
-  // A simple checklist: existing items as CheckRows plus a persistent "add" row
-  // at the bottom (iOS Reminders style). Used by the hub reminders. (Task
-  // checklists in the journal / To-do use TaskList, which adds selectable rows
-  // and drag-reorder.)
-  interface Item {
-    id: string;
-    text: string;
-    done: boolean;
-    /** Optional right-aligned count badge (e.g. reminder miss-streak). */
-    badge?: number;
-    /** Optional small right-aligned label. */
-    meta?: string;
-  }
+  import TaskRow from './TaskRow.svelte';
+  import { sortable } from '../lib/dnd/sortable';
+  import type { Task } from '../lib/todos/types';
 
   let {
-    items,
+    tasks,
+    group,
+    listId,
     accent = 'var(--today-tint)',
-    placeholder = 'New reminder',
+    placeholder = 'Add task',
+    metaOf,
+    onAdd,
     onToggle,
     onEdit,
-    onAdd,
     onDelete,
+    onReorder,
   }: {
-    items: Item[];
+    tasks: Task[];
+    /** Lists sharing a group allow dragging items between them (To-do categories). */
+    group: string;
+    listId: string;
     accent?: string;
     placeholder?: string;
+    /** Optional right-aligned label per row (e.g. a To-do's day). */
+    metaOf?: (task: Task) => string | undefined;
+    onAdd: (text: string) => void;
     onToggle: (id: string) => void;
     onEdit: (id: string, text: string) => void;
-    onAdd: (text: string) => void;
     onDelete: (id: string) => void;
+    onReorder: (listId: string, orderedIds: string[]) => void;
   } = $props();
 
   let draft = $state('');
@@ -46,7 +44,6 @@
     onAdd(text);
     draft = '';
   }
-
   function onDraftKeydown(e: KeyboardEvent): void {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -55,23 +52,23 @@
   }
 </script>
 
-<div class="list">
-  {#each items as item (item.id)}
-    <CheckRow
-      text={item.text}
-      done={item.done}
-      badge={item.badge ?? 0}
-      meta={item.meta ?? ''}
+<div class="checklist" use:sortable={{ group, listId, onReorder }}>
+  {#each tasks as task (task.id)}
+    <TaskRow
+      id={task.id}
+      text={task.text}
+      done={task.done}
       {accent}
-      onToggle={() => onToggle(item.id)}
-      onEdit={(text) => edited(item.id, text)}
+      meta={metaOf?.(task) ?? ''}
+      onToggle={() => onToggle(task.id)}
+      onEdit={(text) => edited(task.id, text)}
     />
   {/each}
 
-  <div class="row add">
+  <div class="add">
     <span class="plus" style="--row-accent: {accent}" aria-hidden="true">+</span>
     <input
-      class="text"
+      class="add-input"
       type="text"
       {placeholder}
       bind:value={draft}
@@ -82,18 +79,17 @@
 </div>
 
 <style>
-  .list {
+  .checklist {
     display: flex;
     flex-direction: column;
   }
 
-  .row.add {
+  .add {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 9px 4px;
   }
-
   .plus {
     flex: none;
     width: 22px;
@@ -105,8 +101,7 @@
     line-height: 1;
     color: var(--row-accent);
   }
-
-  .text {
+  .add-input {
     flex: 1;
     min-width: 0;
     border: none;
@@ -115,8 +110,7 @@
     padding: 0;
     outline: none;
   }
-
-  .text::placeholder {
+  .add-input::placeholder {
     color: var(--text-placeholder);
   }
 </style>

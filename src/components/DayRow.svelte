@@ -4,7 +4,7 @@
   import { formatHeader } from '../lib/date/format';
   import { renderMarkdown, toggleTask, continueList } from '../lib/markdown/markdown';
   import { active } from '../lib/app/activeEditor.svelte';
-  import DayChecklist from './DayChecklist.svelte';
+  import TaskList from './TaskList.svelte';
   import type { Task } from '../lib/todos/types';
   import type { Milestone } from '../lib/milestones/types';
 
@@ -189,15 +189,18 @@
        editable + drag-reorderable. Source of truth = the todos collection. Shown
        on days that have tasks, plus today (so the scroll of empty days stays calm). -->
   {#if tasks.length > 0 || date === today}
-    <DayChecklist
-      {date}
-      {tasks}
-      onAdd={(text) => onAddTask?.(date, text)}
-      onToggle={(id) => onToggleTask?.(id)}
-      onEdit={(id, text) => onEditTask?.(id, text)}
-      onDelete={(id) => onDeleteTask?.(id)}
-      onReorder={(ids) => onReorderTasks?.(date, ids)}
-    />
+    <div class="checklist-wrap">
+      <TaskList
+        {tasks}
+        group={`day-${date}`}
+        listId={date}
+        onAdd={(text) => onAddTask?.(date, text)}
+        onToggle={(id) => onToggleTask?.(id)}
+        onEdit={(id, text) => onEditTask?.(id, text)}
+        onDelete={(id) => onDeleteTask?.(id)}
+        onReorder={(_listId, ids) => onReorderTasks?.(date, ids)}
+      />
+    </div>
   {/if}
 
   {#if milestones.length > 0}
@@ -343,6 +346,10 @@
   .rendered :global(.md-task.done .md-task-text) {
     color: var(--text-secondary);
     text-decoration: line-through;
+  }
+
+  .checklist-wrap {
+    margin-top: 10px;
   }
 
   .archive-milestones {
