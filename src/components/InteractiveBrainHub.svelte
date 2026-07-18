@@ -237,12 +237,18 @@
         {#each STEM.nodes as [cx, cy, r]}<polygon class="node" points={diamond(cx, cy, r)} />{/each}
       </g>
 
-      <!-- Base mesh (defined once, reused by each quarter highlight) -->
-      <g id="{uid}-baseMesh" class="mesh" clip-path="url(#{uid}-brainClip)">
+      <!-- Mesh shapes defined once as a snippet and rendered INLINE (not via
+           <use>) — browsers don't reliably apply component CSS to <use> shadow
+           clones, which made hovered quarters fall back to a solid black fill. -->
+      {#snippet meshShapes()}
         {#each CELLS as pts}<polygon points={pts} />{/each}
         {#each HEAVY as pts}<polyline class="heavy" points={pts} />{/each}
         {#each FINE as [x1, y1, x2, y2]}<line class="fine" {x1} {y1} {x2} {y2} />{/each}
         {#each NODES as [cx, cy, r]}<polygon class="node" points={diamond(cx, cy, r)} />{/each}
+      {/snippet}
+
+      <g class="mesh" clip-path="url(#{uid}-brainClip)">
+        {@render meshShapes()}
       </g>
 
       <!-- Per-quarter glowing duplicates of the full mesh, clipped to the quarter -->
@@ -258,7 +264,7 @@
           aria-hidden="true"
         >
           <g clip-path="url(#{uid}-clip-{zone.id})">
-            <use href="#{uid}-baseMesh" />
+            {@render meshShapes()}
           </g>
         </g>
       {/each}
@@ -435,11 +441,13 @@
     stroke-width: 2.3;
   }
 
+  /* Section dividers — always visible. */
   .brain-stage :global(.quarter-guide) {
     fill: none;
-    stroke: color-mix(in srgb, var(--_line) 60%, transparent);
-    stroke-width: 1;
-    stroke-dasharray: 5 9;
+    stroke: var(--_line-strong);
+    stroke-width: 1.6;
+    stroke-dasharray: 6 7;
+    vector-effect: non-scaling-stroke;
     pointer-events: none;
   }
 
