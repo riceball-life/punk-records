@@ -8,7 +8,7 @@
     type BrainZone,
     type BrainZoneId,
   } from './InteractiveBrainHub.svelte';
-  import { sections } from '../lib/sections/registry';
+  import { getSection } from '../lib/sections/registry';
   import type { SectionId } from '../lib/sections/types';
   import { goSection } from '../lib/app/route.svelte';
   import { reminders, settings } from '../lib/app/stores';
@@ -24,20 +24,22 @@
   import { currentTheme, setTheme, type Theme } from '../lib/app/theme';
 
   // --- brain hub navigation ---------------------------------------------------
-  // Map the four brain quarters to the app's sections, in registry order.
+  // Which section each quarter maps to. After the brain's 30° rotation the
+  // quarters sit at top / right / left / bottom on screen:
+  //   upper-left = top, upper-right = right, lower-left = left, lower-right = bottom.
+  const ZONE_SECTION: Record<BrainZoneId, SectionId> = {
+    'upper-left': 'todo', // top
+    'upper-right': 'scratch', // right
+    'lower-left': 'tracker', // left
+    'lower-right': 'archives', // bottom
+  };
   const ZONE_ORDER: BrainZoneId[] = ['upper-left', 'upper-right', 'lower-left', 'lower-right'];
-  const brainZones: BrainZone[] = sections.slice(0, 4).map((s, i) => ({
-    id: ZONE_ORDER[i]!,
-    label: s.label,
-    accent: s.accent,
-    disabled: !s.enabled,
-  }));
-  const zoneToSection = new Map<BrainZoneId, SectionId>(
-    sections.slice(0, 4).map((s, i) => [ZONE_ORDER[i]!, s.id] as const),
-  );
+  const brainZones: BrainZone[] = ZONE_ORDER.map((id) => {
+    const s = getSection(ZONE_SECTION[id]);
+    return { id, label: s?.label ?? '', accent: s?.accent, disabled: !s?.enabled };
+  });
   function onZoneSelect(e: { id: BrainZoneId }): void {
-    const id = zoneToSection.get(e.id);
-    if (id) goSection(id);
+    goSection(ZONE_SECTION[e.id]);
   }
 
   // --- theme toggle -----------------------------------------------------------
