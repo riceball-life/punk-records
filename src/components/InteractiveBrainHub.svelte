@@ -362,6 +362,7 @@
     --_focus: var(--brain-focus-color, #b7f6ff);
     --_halo: var(--brain-label-halo, transparent);
     --_label: var(--brain-label-color, var(--_line-strong));
+    --_divider: var(--brain-divider, var(--_line-strong));
 
     /* Just the geometry — no card chrome. Parent may set --brain-background. */
     background: var(--_bg);
@@ -441,12 +442,13 @@
     stroke-width: 2.3;
   }
 
-  /* Section dividers — always visible. */
+  /* Section dividers — always clearly visible. */
   .brain-stage :global(.quarter-guide) {
     fill: none;
-    stroke: var(--_line-strong);
-    stroke-width: 1.6;
-    stroke-dasharray: 6 7;
+    stroke: var(--_divider);
+    stroke-width: 3;
+    stroke-dasharray: 10 7;
+    stroke-linecap: round;
     vector-effect: non-scaling-stroke;
     pointer-events: none;
   }

@@ -7,6 +7,7 @@
   --app-gradient: linear-gradient(135deg, #a8c2e6 0%, #b8afdb 40%, #d5b4d3 70%, #edbccb 100%);
   --bg-edge: #a8c2e6; /* overscroll / status-bar edge color */
   --bg: #a8c2e6; /* solid base for the frosted bars + theme-color */
+  --header-bg: #8b7eb8; /* darker purple tint for the top bars (light mode) */
   --bg-elevated: rgba(255, 255, 255, 0.55); /* translucent input/surface */
   --text: #1b2a3a; /* deep slate-navy, softer than black */
   --text-secondary: #5a6b7d;
@@ -23,6 +24,7 @@
     --app-gradient: linear-gradient(135deg, #182136 0%, #2a2440 42%, #43273e 72%, #532a3a 100%);
     --bg-edge: #182136;
     --bg: #182136;
+    --header-bg: #182136;
     --bg-elevated: rgba(255, 255, 255, 0.06);
     --text: #e8eff7; /* blue-tinted off-white */
     --text-secondary: #8fa3b8;
@@ -40,6 +42,7 @@
   --app-gradient: linear-gradient(135deg, #182136 0%, #2a2440 42%, #43273e 72%, #532a3a 100%);
   --bg-edge: #182136;
   --bg: #182136;
+  --header-bg: #182136;
   --bg-elevated: rgba(255, 255, 255, 0.06);
   --text: #e8eff7;
   --text-secondary: #8fa3b8;

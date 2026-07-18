@@ -89,9 +89,9 @@
 </script>
 
 <header class="section-header">
-  <span class="spacer" aria-hidden="true"></span>
+  <div class="left"><CalendarToggle /></div>
   <h1>To-do</h1>
-  <div class="right"><CalendarToggle /></div>
+  <span class="spacer" aria-hidden="true"></span>
 </header>
 
 <div class="body">
@@ -136,7 +136,7 @@
     align-items: center;
     gap: 12px;
     padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
-    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    background: color-mix(in srgb, var(--header-bg) 88%, transparent);
     backdrop-filter: saturate(1.8) blur(20px);
     -webkit-backdrop-filter: saturate(1.8) blur(20px);
     border-bottom: 0.5px solid var(--separator);
@@ -148,8 +148,8 @@
     font-weight: 700;
     letter-spacing: -0.02em;
   }
-  .section-header .right {
-    justify-self: end;
+  .section-header .left {
+    justify-self: start;
     display: flex;
     align-items: center;
   }

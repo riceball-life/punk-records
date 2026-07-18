@@ -100,7 +100,7 @@
     align-items: center;
     gap: 12px;
     padding: calc(env(safe-area-inset-top) + 10px) 12px 10px;
-    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    background: color-mix(in srgb, var(--header-bg) 88%, transparent);
     backdrop-filter: saturate(1.8) blur(20px);
     -webkit-backdrop-filter: saturate(1.8) blur(20px);
     border-bottom: 0.5px solid var(--separator);

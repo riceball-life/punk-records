@@ -35,10 +35,9 @@
   <NoteEditor id={openId} onClose={() => (openId = null)} />
 {:else}
   <header class="list-header">
-    <span class="spacer" aria-hidden="true"></span>
+    <div class="left"><CalendarToggle /></div>
     <h1>Scratch</h1>
     <div class="right">
-      <CalendarToggle />
       <button class="icon" onclick={createNote} aria-label="New note" title="New note">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
@@ -75,7 +74,7 @@
     align-items: center;
     gap: 12px;
     padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
-    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    background: color-mix(in srgb, var(--header-bg) 88%, transparent);
     backdrop-filter: saturate(1.8) blur(20px);
     -webkit-backdrop-filter: saturate(1.8) blur(20px);
     border-bottom: 0.5px solid var(--separator);
@@ -95,6 +94,12 @@
     display: flex;
     align-items: center;
     gap: 4px;
+  }
+  .left {
+    grid-column: 1;
+    justify-self: start;
+    display: flex;
+    align-items: center;
   }
 
   .icon {
