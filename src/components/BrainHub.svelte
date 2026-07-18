@@ -29,6 +29,7 @@
   const brainZones: BrainZone[] = sections.slice(0, 4).map((s, i) => ({
     id: ZONE_ORDER[i]!,
     label: s.label,
+    accent: s.accent,
     disabled: !s.enabled,
   }));
   const zoneToSection = new Map<BrainZoneId, SectionId>(
@@ -122,21 +123,7 @@
 
 <div class="hub">
   <div class="brain-wrap">
-    <InteractiveBrainHub zones={brainZones} onselect={onZoneSelect} />
-  </div>
-
-  <!-- Legend keeps all four destinations visible (the brain shows one label at a time). -->
-  <div class="legend">
-    {#each sections.slice(0, 4) as section (section.id)}
-      <button
-        class="legend-item"
-        onclick={() => section.enabled && goSection(section.id)}
-        disabled={!section.enabled}
-      >
-        <span class="legend-dot" style="background: {section.accent}"></span>
-        {section.label}
-      </button>
-    {/each}
+    <InteractiveBrainHub zones={brainZones} onselect={onZoneSelect} showPanel={false} />
   </div>
 
   <section class="reminders">
@@ -210,43 +197,17 @@
 
   .brain-wrap {
     width: 100%;
-    max-width: 420px;
-    margin: 4px 0 14px;
-  }
-
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px 16px;
-    margin-bottom: 18px;
-  }
-  .legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    border: none;
-    background: transparent;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 600;
-    padding: 4px 6px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .legend-item:disabled {
-    color: var(--text-secondary);
-    opacity: 0.55;
-    cursor: default;
-  }
-  .legend-item:active:not(:disabled) {
-    background: color-mix(in srgb, var(--text) 6%, transparent);
-  }
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    flex: none;
+    max-width: 440px;
+    margin: 8px 0 20px;
+    /* Theme the widget to the app palette: neutral lines that brighten to each
+       section's accent on hover; labels get a --bg-colored halo for legibility. */
+    --brain-background: transparent;
+    --brain-line: color-mix(in srgb, var(--text) 32%, transparent);
+    --brain-line-strong: color-mix(in srgb, var(--text) 58%, transparent);
+    --brain-glow: var(--today-tint);
+    --brain-focus-color: var(--today-tint);
+    --brain-label-halo: var(--bg);
+    --brain-hover-opacity: 1;
   }
 
   .reminders {

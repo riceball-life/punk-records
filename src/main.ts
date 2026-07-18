@@ -1,5 +1,7 @@
 import { mount } from 'svelte';
 import { registerSW } from 'virtual:pwa-register';
+import '@fontsource/orbitron/500.css';
+import '@fontsource/orbitron/700.css';
 import './styles/global.css';
 import App from './App.svelte';
 import { requestPersistentStorage } from './lib/persistence/persist';

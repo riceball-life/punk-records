@@ -7,6 +7,8 @@
     description?: string;
     disabled?: boolean;
     badge?: string | number;
+    /** Identity color for this quarter's hover glow + on-brain label. */
+    accent?: string;
   }
 
   export interface BrainSelectEvent {
@@ -114,6 +116,16 @@
   function diamond(cx: number, cy: number, r: number): string {
     return `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`;
   }
+
+  /** Rotate a point about the brain's pivot (matches the 30° group transform). */
+  function rotate(x: number, y: number, deg = 30, cx = 500, cy = 340): { x: number; y: number } {
+    const r = (deg * Math.PI) / 180;
+    const cos = Math.cos(r);
+    const sin = Math.sin(r);
+    const dx = x - cx;
+    const dy = y - cy;
+    return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+  }
 </script>
 
 <script lang="ts">
@@ -124,6 +136,8 @@
     selectedZone = $bindable(null),
     ariaLabel = 'Interactive brain navigation hub',
     placeholder = 'Choose a brain region.',
+    showLabels = true,
+    showPanel = true,
     onselect,
     onhover,
   }: {
@@ -131,6 +145,10 @@
     selectedZone?: BrainZoneId | null;
     ariaLabel?: string;
     placeholder?: string;
+    /** Draw each quarter's label directly on the brain. */
+    showLabels?: boolean;
+    /** Show the fixed label panel below the brain. */
+    showPanel?: boolean;
     onselect?: (e: BrainSelectEvent) => void;
     onhover?: (e: BrainHoverEvent) => void;
   } = $props();
@@ -231,6 +249,7 @@
           class="quarter-highlight"
           class:strong={level === 'strong'}
           class:weak={level === 'weak'}
+          style="--zone-accent: {zone.accent ?? 'var(--_glow)'}"
           clip-path="url(#{uid}-brainClip)"
           filter="url(#{uid}-quarterGlow)"
           aria-hidden="true"
@@ -248,6 +267,7 @@
           class="quarter-highlight"
           class:strong={level === 'strong'}
           class:weak={level === 'weak'}
+          style="--zone-accent: {lowerRight.accent ?? 'var(--_glow)'}"
           filter="url(#{uid}-quarterGlow)"
           aria-hidden="true"
         >
@@ -289,50 +309,65 @@
         {/each}
       </g>
     </g>
+
+    <!-- Upright labels placed at each quarter's on-screen centre. -->
+    {#if showLabels}
+      <g class="labels" aria-hidden="true">
+        {#each zones as zone (zone.id)}
+          {@const gm = GEOM[zone.id]}
+          {@const c = rotate(gm.x + gm.w / 2, gm.y + gm.h / 2)}
+          <text
+            class="zone-label"
+            class:disabled={zone.disabled}
+            style="--zone-accent: {zone.accent ?? 'var(--_glow)'}"
+            x={c.x}
+            y={c.y}
+            text-anchor="middle"
+            dominant-baseline="middle">{zone.label}</text>
+        {/each}
+      </g>
+    {/if}
   </svg>
 
-  <div class="label-panel" aria-live="polite">
-    {#if activeZone}
-      <span class="label-title">{activeZone.label}</span>
-      {#if activeZone.badge != null}<span class="label-badge">{activeZone.badge}</span>{/if}
-      {#if activeZone.description}<span class="label-desc">{activeZone.description}</span>{/if}
-    {:else}
-      <span class="label-placeholder">{placeholder}</span>
-    {/if}
-  </div>
+  {#if showPanel}
+    <div class="label-panel" aria-live="polite">
+      {#if activeZone}
+        <span class="label-title">{activeZone.label}</span>
+        {#if activeZone.badge != null}<span class="label-badge">{activeZone.badge}</span>{/if}
+        {#if activeZone.description}<span class="label-desc">{activeZone.description}</span>{/if}
+      {:else}
+        <span class="label-placeholder">{placeholder}</span>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>
   .brain-stage {
-    --_bg: var(--brain-background, #070a13);
+    --_bg: var(--brain-background, transparent);
     --_line: var(--brain-line, rgba(99, 174, 222, 0.52));
     --_line-strong: var(--brain-line-strong, rgba(132, 222, 255, 0.82));
     --_glow: var(--brain-glow, #52e3ff);
-    --_fill: var(--brain-fill, rgba(30, 94, 135, 0.035));
     --_sel-op: var(--brain-selected-opacity, 0.5);
     --_hov-op: var(--brain-hover-opacity, 1);
     --_focus: var(--brain-focus-color, #b7f6ff);
+    --_halo: var(--brain-label-halo, transparent);
 
-    position: relative;
-    border-radius: 20px;
-    padding: 14px;
-    background:
-      radial-gradient(circle at 50% 40%, rgba(34, 96, 150, 0.16), transparent 42%),
-      var(--_bg);
-    border: 1px solid rgba(132, 222, 255, 0.12);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
+    /* Just the geometry — no card chrome. Parent may set --brain-background. */
+    background: var(--_bg);
   }
 
   .brain {
     display: block;
     width: 100%;
     height: auto;
+    overflow: visible; /* let the hover glow bleed past the viewBox edges */
   }
 
   /* Decorative geometry never intercepts pointers. */
   .brain-stage :global(.outer) {
-    fill: rgba(20, 55, 84, 0.16);
-    stroke: rgba(127, 217, 250, 0.72);
+    fill: none;
+    stroke: var(--_line-strong);
     stroke-width: 2;
     vector-effect: non-scaling-stroke;
     pointer-events: none;
@@ -341,7 +376,7 @@
   .brain-stage :global(.mesh polygon),
   .brain-stage :global(.mesh polyline),
   .brain-stage :global(.mesh line) {
-    fill: var(--_fill);
+    fill: none;
     stroke: var(--_line);
     stroke-width: 1.15;
     vector-effect: non-scaling-stroke;
@@ -349,7 +384,7 @@
   }
   .brain-stage :global(.mesh .fine) {
     stroke-width: 0.8;
-    opacity: 0.76;
+    opacity: 0.7;
   }
   .brain-stage :global(.mesh .heavy) {
     stroke: var(--_line-strong);
@@ -357,12 +392,13 @@
   }
 
   .brain-stage :global(.node) {
-    fill: color-mix(in srgb, var(--_glow) 70%, white);
+    fill: var(--_line-strong);
     stroke: none;
-    opacity: 0.72;
+    opacity: 0.9;
     pointer-events: none;
   }
 
+  /* Hover/select: the quarter's lines simply brighten to its accent + glow. */
   .brain-stage :global(.quarter-highlight) {
     opacity: 0;
     pointer-events: none;
@@ -376,11 +412,16 @@
   }
   .brain-stage :global(.quarter-highlight polygon),
   .brain-stage :global(.quarter-highlight polyline),
-  .brain-stage :global(.quarter-highlight line) {
-    fill: color-mix(in srgb, var(--_glow) 15%, transparent);
-    stroke: color-mix(in srgb, var(--_glow) 55%, white);
+  .brain-stage :global(.quarter-highlight line),
+  .brain-stage :global(.quarter-highlight .node) {
+    fill: none;
+    stroke: var(--zone-accent, var(--_glow));
     stroke-width: 1.8;
     vector-effect: non-scaling-stroke;
+  }
+  .brain-stage :global(.quarter-highlight .node) {
+    fill: var(--zone-accent, var(--_glow));
+    stroke: none;
   }
   .brain-stage :global(.quarter-highlight .fine) {
     stroke-width: 1.15;
@@ -392,7 +433,7 @@
 
   .brain-stage :global(.quarter-guide) {
     fill: none;
-    stroke: color-mix(in srgb, var(--_glow) 18%, transparent);
+    stroke: color-mix(in srgb, var(--_line) 60%, transparent);
     stroke-width: 1;
     stroke-dasharray: 5 9;
     pointer-events: none;
@@ -408,11 +449,31 @@
   .brain-stage :global(.quarter-hit:focus-visible) {
     stroke: var(--_focus);
     stroke-width: 4;
-    fill: color-mix(in srgb, var(--_glow) 8%, transparent);
+    fill: color-mix(in srgb, var(--_focus) 8%, transparent);
   }
   .brain-stage :global(.quarter-hit.disabled) {
     cursor: not-allowed;
     opacity: 0.4;
+  }
+
+  /* On-brain quarter labels. */
+  .brain-stage :global(.labels) {
+    pointer-events: none;
+  }
+  .brain-stage :global(.zone-label) {
+    font-family: 'Orbitron', var(--font, ui-sans-serif, system-ui, sans-serif);
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    fill: var(--zone-accent, var(--_line-strong));
+    paint-order: stroke;
+    stroke: var(--_halo);
+    stroke-width: 5;
+    stroke-linejoin: round;
+  }
+  .brain-stage :global(.zone-label.disabled) {
+    opacity: 0.5;
   }
 
   .label-panel {
@@ -423,9 +484,10 @@
     margin-top: 10px;
     padding: 8px 12px;
     border-radius: 999px;
-    background: rgba(8, 16, 30, 0.7);
-    border: 1px solid rgba(132, 222, 255, 0.16);
-    color: #8fa8bd;
+    background: color-mix(in srgb, var(--_line) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--_line) 40%, transparent);
+    color: inherit;
+    opacity: 0.85;
     font-size: 14px;
     min-height: 20px;
   }
@@ -437,12 +499,8 @@
     padding: 1px 8px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--_glow) 22%, transparent);
-    color: #eafbff;
     font-size: 12px;
     font-weight: 700;
-  }
-  .label-desc {
-    color: #8fa8bd;
   }
 
   @media (prefers-reduced-motion: reduce) {
