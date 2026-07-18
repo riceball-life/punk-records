@@ -130,6 +130,8 @@
 
 <script lang="ts">
   const uid = `brainhub-${uidCounter++}`;
+  // How far out from the brain centre to place the (outside-the-brain) labels.
+  const LABEL_R = 470;
 
   let {
     zones,
@@ -194,7 +196,7 @@
 </script>
 
 <div class="brain-stage" role="group" aria-label={ariaLabel}>
-  <svg class="brain" viewBox="0 0 1000 700" aria-labelledby="{uid}-title {uid}-desc">
+  <svg class="brain" viewBox="-80 -110 1160 920" aria-labelledby="{uid}-title {uid}-desc">
     <title id="{uid}-title">Interactive geometric brain with four navigation zones</title>
     <desc id="{uid}-desc">
       A polygonal brain built only from straight lines, rotated clockwise, divided into four
@@ -203,8 +205,9 @@
 
     <defs>
       <filter id="{uid}-quarterGlow" x="-80%" y="-80%" width="260%" height="260%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+        <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
         <feMerge>
+          <feMergeNode in="blur" />
           <feMergeNode in="blur" />
           <feMergeNode in="SourceGraphic" />
         </feMerge>
@@ -316,12 +319,12 @@
         {#each zones as zone (zone.id)}
           {@const gm = GEOM[zone.id]}
           {@const c = rotate(gm.x + gm.w / 2, gm.y + gm.h / 2)}
+          {@const d = Math.hypot(c.x - 500, c.y - 340) || 1}
           <text
             class="zone-label"
             class:disabled={zone.disabled}
-            style="--zone-accent: {zone.accent ?? 'var(--_glow)'}"
-            x={c.x}
-            y={c.y}
+            x={500 + ((c.x - 500) / d) * LABEL_R}
+            y={340 + ((c.y - 340) / d) * LABEL_R}
             text-anchor="middle"
             dominant-baseline="middle">{zone.label}</text>
         {/each}
@@ -352,6 +355,7 @@
     --_hov-op: var(--brain-hover-opacity, 1);
     --_focus: var(--brain-focus-color, #b7f6ff);
     --_halo: var(--brain-label-halo, transparent);
+    --_label: var(--brain-label-color, var(--_line-strong));
 
     /* Just the geometry — no card chrome. Parent may set --brain-background. */
     background: var(--_bg);
@@ -415,12 +419,12 @@
   .brain-stage :global(.quarter-highlight line),
   .brain-stage :global(.quarter-highlight .node) {
     fill: none;
-    stroke: var(--zone-accent, var(--_glow));
-    stroke-width: 1.8;
+    stroke: color-mix(in srgb, var(--zone-accent, var(--_glow)) 78%, white);
+    stroke-width: 2;
     vector-effect: non-scaling-stroke;
   }
   .brain-stage :global(.quarter-highlight .node) {
-    fill: var(--zone-accent, var(--_glow));
+    fill: color-mix(in srgb, var(--zone-accent, var(--_glow)) 78%, white);
     stroke: none;
   }
   .brain-stage :global(.quarter-highlight .fine) {
@@ -461,15 +465,14 @@
     pointer-events: none;
   }
   .brain-stage :global(.zone-label) {
-    font-family: 'Orbitron', var(--font, ui-sans-serif, system-ui, sans-serif);
-    font-size: 40px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    fill: var(--zone-accent, var(--_line-strong));
+    font-family: 'Space Grotesk', var(--font, ui-sans-serif, system-ui, sans-serif);
+    font-size: 42px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    fill: var(--_label);
     paint-order: stroke;
     stroke: var(--_halo);
-    stroke-width: 5;
+    stroke-width: 6;
     stroke-linejoin: round;
   }
   .brain-stage :global(.zone-label.disabled) {

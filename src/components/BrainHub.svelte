@@ -202,10 +202,11 @@
     /* Theme the widget to the app palette: neutral lines that brighten to each
        section's accent on hover; labels get a --bg-colored halo for legibility. */
     --brain-background: transparent;
-    --brain-line: color-mix(in srgb, var(--text) 32%, transparent);
-    --brain-line-strong: color-mix(in srgb, var(--text) 58%, transparent);
+    --brain-line: color-mix(in srgb, var(--text) 22%, transparent);
+    --brain-line-strong: color-mix(in srgb, var(--text) 42%, transparent);
     --brain-glow: var(--today-tint);
     --brain-focus-color: var(--today-tint);
+    --brain-label-color: var(--text);
     --brain-label-halo: var(--bg);
     --brain-hover-opacity: 1;
   }
