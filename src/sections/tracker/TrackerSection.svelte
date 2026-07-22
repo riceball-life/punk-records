@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import BenchmarkEditor from './BenchmarkEditor.svelte';
+  import ProteinCard from './ProteinCard.svelte';
   import CalendarToggle from '../../components/CalendarToggle.svelte';
   import { benchmarks } from '../../lib/app/stores';
   import {
@@ -54,8 +55,10 @@
   </header>
 
   <div class="list">
+    <ProteinCard />
+
     {#if items.length === 0}
-      <div class="empty">
+      <div class="empty benchmarks-empty">
         <p class="title">No benchmarks yet</p>
         <p class="sub">Tap + to track a personal record.</p>
       </div>
@@ -179,6 +182,10 @@
     text-align: center;
     padding: 64px 24px;
     color: var(--text-secondary);
+  }
+  /* Sits below the pinned protein card, so it needs less top space. */
+  .benchmarks-empty {
+    padding: 40px 24px;
   }
   .empty .title {
     margin: 0 0 4px;

@@ -13,6 +13,7 @@ import type { Note } from '../notes/types';
 import { taskDate, taskOrder, type Task } from '../todos/types';
 import type { Benchmark } from '../tracker/types';
 import type { Milestone } from '../milestones/types';
+import { foldProteinLine, newProteinDay, proteinIdFor, type ProteinDay } from '../protein/types';
 
 /** App-wide singletons. */
 export const settings = createSettings();
@@ -111,6 +112,53 @@ export const benchmarks = createCollection<Benchmark>('benchmarks');
 /** Logged PR milestones — project into Archives by day, alongside completed todos. */
 export const milestones = createCollection<Milestone>('milestones');
 
+/** Daily protein intake — one running-total record per day (`protein:<day>`). */
+export const protein = createCollection<ProteinDay>('protein');
+
+/** Default daily protein goal (grams) until the owner sets their own. */
+export const DEFAULT_PROTEIN_GOAL = 150;
+
+/** Read the current daily protein goal (grams), falling back to the default. */
+export async function getProteinGoal(): Promise<number> {
+  const stored = await settings.get<number>('protein.goal');
+  return typeof stored === 'number' && stored > 0 ? stored : DEFAULT_PROTEIN_GOAL;
+}
+
+/** Persist a new daily protein goal (grams). */
+export async function setProteinGoal(grams: number): Promise<void> {
+  await settings.set('protein.goal', Math.max(1, Math.round(grams)));
+}
+
+/**
+ * Upsert the day's protein total as a single `🍗 N g protein` line in that day's
+ * journal entry — the mechanism by which protein surfaces in Archives. Delegates
+ * the string transform to the pure `foldProteinLine` (strip-then-append; removes
+ * the line at 0), and handles the repo/entry-store plumbing: flush pending edits
+ * first so we don't race the debounced autosave, then invalidate so a later
+ * Archives mount reloads the new text.
+ */
+export async function upsertProteinLine(day: string, grams: number, goal: number): Promise<void> {
+  await entryStore.flush();
+  const text = (await repo.get(day))?.text ?? '';
+  await repo.put(day, foldProteinLine(text, grams, goal));
+  entryStore.invalidate();
+}
+
+/**
+ * Log a protein delta (grams) against today's running total: bump the day's
+ * single `protein:<today>` record (clamped at 0), then fold the new total into
+ * today's journal entry. Returns the new total.
+ */
+export async function logProtein(delta: number): Promise<number> {
+  const day = todayKey();
+  const existing = await protein.get(proteinIdFor(day));
+  const base = existing ?? newProteinDay(day);
+  const grams = Math.max(0, base.grams + delta);
+  await protein.put({ ...base, grams });
+  await upsertProteinLine(day, grams, await getProteinGoal());
+  return grams;
+}
+
 /**
  * The minimal sign-in/sync surface the App shell drives on each engine. Both the
  * bespoke entries `SyncEngine` and every generic `Collection` satisfy it.
@@ -128,7 +176,7 @@ export interface Syncable {
  * still works — the collections just don't sync).
  */
 export const syncables: Syncable[] = syncEngine
-  ? [syncEngine, reminders, notes, todos, benchmarks, milestones]
+  ? [syncEngine, reminders, notes, todos, benchmarks, milestones, protein]
   : [];
 
 /**
