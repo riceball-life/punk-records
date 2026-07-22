@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
-  import { benchmarks, milestones } from '../../lib/app/stores';
+  import { benchmarks, milestones, appendToTodayEntry } from '../../lib/app/stores';
   import { defaultMilestoneText, type Benchmark } from '../../lib/tracker/types';
   import { newMilestone } from '../../lib/milestones/types';
 
@@ -78,12 +78,15 @@
     schedule();
   }
 
-  function logMilestone(): void {
+  async function logMilestone(): Promise<void> {
     if (!bench) return;
     const text = msText.trim();
     if (text === '') return;
-    void save(); // persist the new value alongside the milestone
+    await save(); // persist the new value alongside the milestone
+    // Keep a milestone record (calendar gold dots + future history) AND log it as
+    // a line in today's journal entry.
     void milestones.put(newMilestone(text, bench.id));
+    await appendToTodayEntry(`🏅 ${text}`);
     logged = true;
   }
 

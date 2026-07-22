@@ -4,36 +4,15 @@
   import { formatHeader } from '../lib/date/format';
   import { renderMarkdown, toggleTask, continueList } from '../lib/markdown/markdown';
   import { active } from '../lib/app/activeEditor.svelte';
-  import TaskList from './TaskList.svelte';
-  import type { Task } from '../lib/todos/types';
-  import type { Milestone } from '../lib/milestones/types';
 
   let {
     date,
     today,
     store,
-    tasks = [],
-    milestones = [],
-    onAddTask,
-    onToggleTask,
-    onEditTask,
-    onDeleteTask,
-    onReorderTasks,
-    onDeleteMilestone,
   }: {
     date: string;
     today: string;
     store: EntryStore;
-    /** This day's checklist tasks (structured, editable, drag-reorderable). */
-    tasks?: Task[];
-    /** Milestones logged this day (read-only records, deletable). */
-    milestones?: Milestone[];
-    onAddTask?: (date: string, text: string) => void;
-    onToggleTask?: (id: string) => void;
-    onEditTask?: (id: string, text: string) => void;
-    onDeleteTask?: (id: string) => void;
-    onReorderTasks?: (date: string, orderedIds: string[]) => void;
-    onDeleteMilestone?: (id: string) => void;
   } = $props();
 
   // Seed from the cache synchronously when available so the row renders at its
@@ -184,50 +163,6 @@
       {@html html}
     </div>
   {/if}
-
-  <!-- This day's checklist: structured, always-real checkboxes (never `- [ ]`),
-       editable + drag-reorderable. Source of truth = the todos collection. Shown
-       on days that have tasks, plus today (so the scroll of empty days stays calm). -->
-  {#if tasks.length > 0 || date === today}
-    <div class="checklist-wrap">
-      <TaskList
-        {tasks}
-        group={`day-${date}`}
-        listId={date}
-        onAdd={(text) => onAddTask?.(date, text)}
-        onToggle={(id) => onToggleTask?.(id)}
-        onEdit={(id, text) => onEditTask?.(id, text)}
-        onDelete={(id) => onDeleteTask?.(id)}
-        onReorder={(_listId, ids) => onReorderTasks?.(date, ids)}
-      />
-    </div>
-  {/if}
-
-  {#if milestones.length > 0}
-    <!-- Logged milestones: records, not checkboxes. Delete with the × button. -->
-    <ul class="archive-milestones">
-      {#each milestones as m (m.id)}
-        <li class="archive-milestone">
-          <span class="ms-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="14" r="6" />
-              <path d="M9.5 8.5L7 2M14.5 8.5L17 2" />
-            </svg>
-          </span>
-          <span class="ms-text">{m.text}</span>
-          <button
-            class="ms-del"
-            onclick={() => onDeleteMilestone?.(m.id)}
-            aria-label="Delete milestone “{m.text}”"
-          >
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </li>
-      {/each}
-    </ul>
-  {/if}
 </section>
 
 <style>
@@ -346,54 +281,5 @@
   .rendered :global(.md-task.done .md-task-text) {
     color: var(--text-secondary);
     text-decoration: line-through;
-  }
-
-  .checklist-wrap {
-    margin-top: 10px;
-  }
-
-  .archive-milestones {
-    list-style: none;
-    margin: 6px 0 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .archive-milestone {
-    display: flex;
-    align-items: flex-start;
-    gap: 9px;
-  }
-
-  .ms-icon {
-    flex: none;
-    margin-top: 1px;
-    color: #e08a2b; /* tracker amber */
-    display: inline-flex;
-  }
-
-  .ms-text {
-    flex: 1;
-    min-width: 0;
-    color: var(--text);
-    line-height: 1.45;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-  }
-
-  .ms-del {
-    flex: none;
-    margin-top: -1px;
-    padding: 2px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    border-radius: 999px;
-    cursor: pointer;
-  }
-  .ms-del:active {
-    background: color-mix(in srgb, var(--text) 8%, transparent);
   }
 </style>

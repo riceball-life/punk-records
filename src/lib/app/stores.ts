@@ -7,9 +7,10 @@ import { createLocalSyncStore } from '../sync/localSync';
 import { createRemoteSource } from '../sync/remote';
 import { createSyncEngine, type SyncEngine } from '../sync/syncEngine';
 import { createCollection } from '../sync/collection';
+import { todayKey } from '../date/dateUtils';
 import type { Reminder } from '../reminders/types';
 import type { Note } from '../notes/types';
-import type { Task } from '../todos/types';
+import { taskDate, taskOrder, type Task } from '../todos/types';
 import type { Benchmark } from '../tracker/types';
 import type { Milestone } from '../milestones/types';
 
@@ -36,6 +37,21 @@ function buildRepo() {
 
 export const repo = buildRepo();
 export const entryStore = createEntryStore(repo);
+
+/**
+ * Append a line to *today's* journal entry — the way To-do completions and
+ * Tracker milestones are logged into Archives (as plain text, not structured
+ * data). Flushes any pending edit first so we don't race the debounced autosave,
+ * then invalidates the cache so a later Archives mount reloads the new text.
+ */
+export async function appendToTodayEntry(line: string): Promise<void> {
+  await entryStore.flush();
+  const day = todayKey();
+  const current = (await repo.get(day))?.text ?? '';
+  const trimmed = current.replace(/\s+$/, '');
+  await repo.put(day, trimmed ? `${trimmed}\n${line}` : line);
+  entryStore.invalidate();
+}
 
 /**
  * Hub "daily reminders" — the first consumer of the generic collection layer.
@@ -75,3 +91,38 @@ export interface Syncable {
 export const syncables: Syncable[] = syncEngine
   ? [syncEngine, reminders, notes, todos, benchmarks, milestones]
   : [];
+
+/**
+ * One-time migration when decoupling Archives from To-do: fold every already-
+ * completed task into its day's journal entry as a `✓ …` line, then delete the
+ * task record — so past "what I did" history survives as journal text instead of
+ * structured checklist data. Guarded by a local flag; call once after todos are
+ * loaded/synced.
+ */
+export async function migrateCompletedTasksToEntries(): Promise<void> {
+  if (await settings.get<boolean>('migration.foldCompletedTasks')) return;
+
+  const completed = (await todos.list()).filter((t) => t.done);
+  const byDay = new Map<string, Task[]>();
+  for (const t of completed) {
+    const day = taskDate(t);
+    if (!day) continue;
+    (byDay.get(day) ?? byDay.set(day, []).get(day)!).push(t);
+  }
+
+  for (const [day, tasks] of byDay) {
+    tasks.sort((a, b) => taskOrder(a) - taskOrder(b) || a.createdAt.localeCompare(b.createdAt));
+    const lines = tasks
+      .map((t) => t.text.trim())
+      .filter(Boolean)
+      .map((text) => `✓ ${text}`)
+      .join('\n');
+    if (lines) {
+      const current = ((await repo.get(day))?.text ?? '').replace(/\s+$/, '');
+      await repo.put(day, current ? `${current}\n${lines}` : lines);
+    }
+    for (const t of tasks) await todos.remove(t.id);
+  }
+
+  await settings.set('migration.foldCompletedTasks', true);
+}

@@ -2,10 +2,9 @@
   import { onMount } from 'svelte';
   import TaskList from '../../components/TaskList.svelte';
   import CalendarToggle from '../../components/CalendarToggle.svelte';
-  import { todos } from '../../lib/app/stores';
+  import { todos, appendToTodayEntry } from '../../lib/app/stores';
   import {
     newTask,
-    markTaskDone,
     taskInboxOrder,
     taskCategory,
     groupTasksByCategory,
@@ -48,9 +47,12 @@
     return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  function toggle(id: string): void {
+  // Checking a task off logs it to today's journal entry and removes it from the list.
+  async function toggle(id: string): Promise<void> {
     const t = openTasks.find((x) => x.id === id);
-    if (t) void todos.put(markTaskDone(t));
+    if (!t) return;
+    await appendToTodayEntry(`✓ ${t.text.trim()}`);
+    await todos.remove(id);
   }
   function edit(id: string, text: string): void {
     const t = openTasks.find((x) => x.id === id);

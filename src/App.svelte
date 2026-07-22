@@ -4,7 +4,7 @@
   import BrainButton from './components/BrainButton.svelte';
   import SignIn from './components/SignIn.svelte';
   import FormatBar from './components/FormatBar.svelte';
-  import { entryStore, syncables } from './lib/app/stores';
+  import { entryStore, syncables, migrateCompletedTasksToEntries } from './lib/app/stores';
   import { isSupabaseConfigured } from './lib/sync/supabaseClient';
   import { currentUserId, onAuthChange } from './lib/sync/auth';
   import { nav } from './lib/app/route.svelte';
@@ -38,6 +38,9 @@
         if (session) void handleSignedIn(session.user.id);
         else authed = false;
       });
+    } else {
+      // Offline-only build: local data is present, so run the migration now.
+      await migrateCompletedTasksToEntries();
     }
   });
 
@@ -51,6 +54,13 @@
     // Reset watermarks / wipe a previous account's data across all engines.
     await Promise.all(syncables.map((s) => s.prepareForUser(uid)));
     await Promise.all(syncables.map((s) => s.backfillIfNeeded()));
+
+    // Full initial sync so entries + todos are present locally BEFORE folding any
+    // already-completed tasks into journal text (one-time) — otherwise the append
+    // could clobber a not-yet-pulled entry via last-write-wins. The later syncAll
+    // pushes the migration's edits.
+    await Promise.all(syncables.map((s) => s.sync()));
+    await migrateCompletedTasksToEntries();
 
     if (!syncWired) {
       document.addEventListener('visibilitychange', () => {
