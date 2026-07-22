@@ -4,7 +4,12 @@
   import BrainButton from './components/BrainButton.svelte';
   import SignIn from './components/SignIn.svelte';
   import FormatBar from './components/FormatBar.svelte';
-  import { entryStore, syncables, migrateCompletedTasksToEntries } from './lib/app/stores';
+  import {
+    entryStore,
+    syncables,
+    migrateCompletedTasksToEntries,
+    clearOldCompletedTasks,
+  } from './lib/app/stores';
   import { isSupabaseConfigured } from './lib/sync/supabaseClient';
   import { currentUserId, onAuthChange } from './lib/sync/auth';
   import { nav } from './lib/app/route.svelte';
@@ -41,6 +46,7 @@
     } else {
       // Offline-only build: local data is present, so run the migration now.
       await migrateCompletedTasksToEntries();
+      await clearOldCompletedTasks();
     }
   });
 
@@ -61,6 +67,7 @@
     // pushes the migration's edits.
     await Promise.all(syncables.map((s) => s.sync()));
     await migrateCompletedTasksToEntries();
+    await clearOldCompletedTasks();
 
     if (!syncWired) {
       document.addEventListener('visibilitychange', () => {

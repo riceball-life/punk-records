@@ -38,18 +38,57 @@ function buildRepo() {
 export const repo = buildRepo();
 export const entryStore = createEntryStore(repo);
 
+/** Append a line to a day's journal entry (via the syncing repo). */
+async function appendEntryLine(day: string, line: string): Promise<void> {
+  const current = ((await repo.get(day))?.text ?? '').replace(/\s+$/, '');
+  await repo.put(day, current ? `${current}\n${line}` : line);
+}
+
 /**
- * Append a line to *today's* journal entry — the way To-do completions and
- * Tracker milestones are logged into Archives (as plain text, not structured
- * data). Flushes any pending edit first so we don't race the debounced autosave,
- * then invalidates the cache so a later Archives mount reloads the new text.
+ * Append a line to *today's* journal entry — used by Tracker milestone logging.
+ * Flushes any pending edit first so we don't race the debounced autosave, then
+ * invalidates the cache so a later Archives mount reloads the new text.
  */
 export async function appendToTodayEntry(line: string): Promise<void> {
   await entryStore.flush();
-  const day = todayKey();
-  const current = (await repo.get(day))?.text ?? '';
-  const trimmed = current.replace(/\s+$/, '');
-  await repo.put(day, trimmed ? `${trimmed}\n${line}` : line);
+  await appendEntryLine(todayKey(), line);
+  entryStore.invalidate();
+}
+
+/**
+ * "End of day" cleanup: a checked-off to-do stays on the board through the day it
+ * was completed; once that day has passed, fold it into that day's journal entry
+ * (as a `✓ …` line) and delete the task. Safe to call repeatedly (idempotent).
+ */
+export async function clearOldCompletedTasks(): Promise<void> {
+  const today = todayKey();
+  const stale = (await todos.list()).filter((t) => {
+    const day = taskDate(t);
+    return t.done && day != null && day < today;
+  });
+  if (stale.length === 0) return;
+
+  await entryStore.flush();
+  const byDay = new Map<string, Task[]>();
+  for (const t of stale) {
+    const day = taskDate(t)!;
+    const arr = byDay.get(day);
+    if (arr) arr.push(t);
+    else byDay.set(day, [t]);
+  }
+
+  for (const [day, tasks] of byDay) {
+    tasks.sort(
+      (a, b) => (a.doneAt ?? '').localeCompare(b.doneAt ?? '') || a.createdAt.localeCompare(b.createdAt),
+    );
+    const lines = tasks
+      .map((t) => t.text.trim())
+      .filter(Boolean)
+      .map((text) => `✓ ${text}`)
+      .join('\n');
+    if (lines) await appendEntryLine(day, lines);
+    for (const t of tasks) await todos.remove(t.id);
+  }
   entryStore.invalidate();
 }
 

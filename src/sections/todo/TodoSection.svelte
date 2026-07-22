@@ -2,31 +2,42 @@
   import { onMount } from 'svelte';
   import TaskList from '../../components/TaskList.svelte';
   import CalendarToggle from '../../components/CalendarToggle.svelte';
-  import { todos, appendToTodayEntry } from '../../lib/app/stores';
+  import { todos, clearOldCompletedTasks } from '../../lib/app/stores';
   import {
     newTask,
+    markTaskDone,
+    markTaskOpen,
     taskInboxOrder,
     taskCategory,
     groupTasksByCategory,
     type Task,
   } from '../../lib/todos/types';
+  import { todayKey, toDayKey } from '../../lib/date/dateUtils';
 
   const ACCENT = '#2fa7b5';
   // Shared across every category list so tasks can be dragged between categories.
   const GROUP = 'todo';
 
-  let openTasks = $state<Task[]>([]);
+  let boardTasks = $state<Task[]>([]);
   // Just-created categories with no tasks yet (so they can be added to).
   let pendingCategories = $state<string[]>([]);
   let newCat = $state('');
 
+  // Show open tasks plus ones completed *today* (checked tasks linger on the board
+  // until end of day, then get folded into the journal by clearOldCompletedTasks).
   async function load(): Promise<void> {
+    const today = todayKey();
     const all = await todos.list();
-    openTasks = all.filter((t) => !t.done);
+    boardTasks = all.filter(
+      (t) => !t.done || (t.doneAt != null && toDayKey(new Date(t.doneAt)) === today),
+    );
   }
 
   onMount(() => {
-    void load();
+    void (async () => {
+      await clearOldCompletedTasks();
+      await load();
+    })();
     const off = todos.onChanged(() => void load());
     return off;
   });
@@ -34,7 +45,7 @@
   // Always include an "Other" (uncategorized) group so there's an add row even
   // when empty. Headers only show once a named category is in use.
   const groups = $derived.by(() => {
-    const g = groupTasksByCategory(openTasks, pendingCategories);
+    const g = groupTasksByCategory(boardTasks, pendingCategories);
     if (!g.some((x) => x.category === '')) g.push({ category: '', label: 'Other', items: [] });
     return g;
   });
@@ -47,28 +58,27 @@
     return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  // Checking a task off logs it to today's journal entry and removes it from the list.
-  async function toggle(id: string): Promise<void> {
-    const t = openTasks.find((x) => x.id === id);
-    if (!t) return;
-    await appendToTodayEntry(`✓ ${t.text.trim()}`);
-    await todos.remove(id);
+  // Checking a task just marks it done (it stays on the board, struck through,
+  // until end of day). Unchecking reopens it.
+  function toggle(id: string): void {
+    const t = boardTasks.find((x) => x.id === id);
+    if (t) void todos.put(t.done ? markTaskOpen(t) : markTaskDone(t));
   }
   function edit(id: string, text: string): void {
-    const t = openTasks.find((x) => x.id === id);
+    const t = boardTasks.find((x) => x.id === id);
     if (t) void todos.put({ ...t, text });
   }
   function remove(id: string): void {
     void todos.remove(id);
   }
   function add(category: string, text: string): void {
-    const inCat = openTasks.filter((t) => taskCategory(t) === category).length;
+    const inCat = boardTasks.filter((t) => taskCategory(t) === category).length;
     void todos.put({ ...newTask(text), category, inboxOrder: inCat });
   }
   /** Persist the new order + category for a group (also handles a cross-category move). */
   async function reorder(category: string, orderedIds: string[]): Promise<void> {
     for (let i = 0; i < orderedIds.length; i++) {
-      const t = openTasks.find((x) => x.id === orderedIds[i]);
+      const t = boardTasks.find((x) => x.id === orderedIds[i]);
       if (t && (taskInboxOrder(t) !== i || taskCategory(t) !== category)) {
         void todos.put({ ...t, inboxOrder: i, category });
       }
