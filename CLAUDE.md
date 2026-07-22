@@ -21,31 +21,40 @@ layer is auth-gated so multi-user *could* come later, but that is not the produc
 > ask before changing user-facing branding.
 
 ## How it's organized today — the brain hub
-A persistent **brain button** at the bottom of every screen opens the **hub**: a stylized
-brain divided into tappable **lobes** (sections) plus a **Daily Reminders** quick list.
-Tapping a lobe opens that section. Sections are **self-registering modules** — this is the
-core extensibility seam (see Architecture).
+A persistent **brain button** at the bottom of every screen opens the **hub**: an angular,
+geometric **virtual brain** (the `InteractiveBrainHub` widget) split into four tappable
+**quarters** (sections) plus a **Daily Reminders** quick list. Tapping a quarter opens that
+section. Sections are **self-registering modules** — this is the core extensibility seam
+(see Architecture). Every section header (and the hub) also carries a **calendar toggle**
+icon top-left that jumps straight to the Archives calendar from anywhere.
 
 Sections built so far:
 - **Archives** — the journal + calendar. One plain-text entry per day; a vertical,
-  windowed day-scroll (lands on today) and a vertical-months calendar. Each day also shows
-  its **checklist** (structured tasks) and any **milestones** logged that day.
+  windowed day-scroll (lands on today) and a vertical-months calendar. Days are **just
+  prose** now — completed to-dos and logged milestones fold into that day's entry as plain
+  text lines (`✓ …` / `🏅 …`), not a separate structured checklist. (Markers are easily
+  tweakable.)
 - **Scratch** — freeform, iOS-Notes-style notes (list + per-note editor).
-- **To-do** — checkbox-only tasks. An inbox of open tasks; drag to reorder.
+- **To-do** — checkbox-only tasks, grouped into free-form **categories** (drag a task
+  across categories to recategorize; drag to reorder). Checking a task keeps it on the
+  board struck-through until day's end, then it folds into that day's journal entry and
+  leaves the list.
 - **Tracker** — personal records / benchmarks (free-form value + unit, grouped by
-  free-form category). Updating a value optionally logs a **milestone**.
+  free-form category). Updating a value optionally logs a **milestone** (appended to today's
+  entry as a `🏅 …` line, and dotted gold on the calendar).
 - **Daily Reminders** (on the hub) — a quick recurring-habit checklist with a daily reset
   and a red miss-streak counter.
 
 Integration already live (this is the important part, keep building on it):
-- **Tasks are unified.** A checkbox in a journal day *is* a To-do dated to that day. It
-  shows in both the day's checklist and the To-do inbox; checking it in one place reflects
-  everywhere. Undated inbox tasks surface under a day when completed.
-- **Days aggregate.** Completed tasks and logged Tracker milestones project into Archives
-  under the relevant day — Archives is a running log of what you actually did, alongside
-  what you wrote.
+- **Days aggregate as text.** Check off a To-do → it stays on the board (struck) until end
+  of day, then folds into that day's journal entry as a `✓ …` line and leaves To-do. Logging
+  a Tracker PR appends a `🏅 …` line under today. So Archives is a running log of what you
+  actually did, alongside what you wrote — as prose, not a live structured projection. (This
+  replaced an earlier design where a journal checkbox *was* a To-do; it was deliberately
+  decoupled — Archives is journal text again, To-do stands alone.)
 - **Cross-surfacing signals.** The calendar dots days with journal entries (accent) and
-  days with milestones (gold).
+  days with milestones (gold — the milestone *records* are kept for the dots even though
+  they now render inline as text).
 
 Natural next objects to integrate (not yet built): **calendar events** and **goals** — both
 should tie into the same day-oriented, cross-referenced fabric, not become islands.
@@ -67,6 +76,15 @@ should tie into the same day-oriented, cross-referenced fabric, not become islan
   tombstones). Works fully offline; syncs when configured/online.
 - **Windowed day-scroll.** Hand-rolled virtualization with bidirectional scroll-anchoring
   (`src/lib/scroll/`, `src/components/DayScroll.svelte`) — keep it smooth on iPhone.
+- **Hand-rolled drag-sort.** `src/lib/dnd/sortable.ts` — a group-aware pointer sortable
+  (ghost clone + insertion line; rows carry `data-sortable-id`, handles `data-sortable-handle`;
+  lists sharing a `group` allow cross-list moves → `onReorder(listId, orderedIds)`). Powers
+  the To-do lists via `TaskList`/`TaskRow` (rendered-*selectable* click-to-edit rows). This
+  replaced `svelte-dnd-action`, which is gone.
+- **Brain hub widget.** `src/components/InteractiveBrainHub.svelte` — a themeable angular
+  SVG "virtual brain" (four quarter hit-zones, hover/select glow, labels placed outside the
+  brain, scoped unique ids, Svelte-5 callback props). `BrainHub` maps the four quarters →
+  sections and `onselect` → `goSection`. Custom-property driven so it inherits app tokens.
 - **Repository/collection seams.** All storage goes through interfaces so backends can be
   swapped/extended without touching UI.
 
@@ -84,7 +102,9 @@ should tie into the same day-oriented, cross-referenced fabric, not become islan
 - **IndexedDB via `idb`**; **Supabase** (`@supabase/supabase-js`) for auth + sync (anon key
   is public by design; RLS protects rows; it lives only in gitignored `.env`).
 - **PWA via `vite-plugin-pwa`** (manifest + service worker, installable, autoupdate).
-- **`svelte-dnd-action`** for drag-reorder (handle-initiated).
+- **Drag-reorder is hand-rolled** (`src/lib/dnd/sortable.ts`, handle-initiated) — no
+  `svelte-dnd-action` dependency anymore.
+- **`@fontsource/space-grotesk`** (bundled woff2, precached) for the brain-widget labels.
 - **Vitest** + `fake-indexeddb` for tests. Keep dependencies minimal and the code legible.
 
 ## Design / feel
