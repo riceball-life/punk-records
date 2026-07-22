@@ -41,7 +41,11 @@ Sections built so far:
   leaves the list.
 - **Tracker** — personal records / benchmarks (free-form value + unit, grouped by
   free-form category). Updating a value optionally logs a **milestone** (appended to today's
-  entry as a `🏅 …` line, and dotted gold on the calendar).
+  entry as a `🏅 …` line, and dotted gold on the calendar). A pinned **Protein card** at the
+  top tracks a *running daily total vs. an editable goal* (quick-add presets + custom + undo);
+  the day's total folds into that day's journal entry as a `🍗 N g protein` line (`✓` when the
+  goal is met), which is how protein history shows up in Archives. Protein is a per-day
+  running total (`protein:<day>` records), distinct from a dateless benchmark.
 - **Daily Reminders** (on the hub) — a quick recurring-habit checklist with a daily reset
   and a red miss-streak counter.
 
