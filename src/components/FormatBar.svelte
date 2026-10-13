@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { active } from '../lib/app/activeEditor.svelte';
-  import { toggleBullet, toggleWrap, type Edit } from '../lib/markdown/format';
+  import { toggleCheck, toggleWrap, type Edit } from '../lib/markdown/format';
 
   // Distance from the bottom of the window to sit above the on-screen keyboard.
   let bottom = $state(0);
@@ -45,7 +45,7 @@
     ed.apply(edit.value, edit.caret);
   }
 
-  const bullet = () => run((v, s) => toggleBullet(v, s));
+  const check = () => run((v, s) => toggleCheck(v, s));
   const bold = () => run((v, s, e) => toggleWrap(v, s, e, '**'));
   const italic = () => run((v, s, e) => toggleWrap(v, s, e, '_'));
 </script>
@@ -64,12 +64,9 @@
   >
     <button class="bold" onclick={bold} aria-label="Bold" title="Bold">B</button>
     <button class="italic" onclick={italic} aria-label="Italic" title="Italic">i</button>
-    <button onclick={bullet} aria-label="Bullet list" title="Bullet">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="5" cy="7" r="1.4" fill="currentColor" stroke="none" />
-        <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
-        <circle cx="5" cy="17" r="1.4" fill="currentColor" stroke="none" />
-        <path d="M10 7h9M10 12h9M10 17h9" />
+    <button onclick={check} aria-label="Checkmark" title="Checkmark">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 13l4 4L19 7" />
       </svg>
     </button>
   </div>

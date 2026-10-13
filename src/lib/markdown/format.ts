@@ -11,7 +11,7 @@ export interface Edit {
 }
 
 const CHECK_PREFIX = /^(\s*)- \[[ xX]\] /;
-const BULLET_PREFIX = /^(\s*)- (?!\[[ xX]\] )/; // "- " not starting a checkbox
+const CHECK_MARK_PREFIX = /^(\s*)✓ /; // the "✓ " line completed to-dos fold into Archives as
 
 function lineStartAt(value: string, caret: number): number {
   return value.lastIndexOf('\n', caret - 1) + 1;
@@ -36,11 +36,12 @@ export function toggleChecklist(value: string, caret: number): Edit {
   return m ? removePrefix(value, ls, m[0].length, caret) : addPrefix(value, ls, '- [ ] ', caret);
 }
 
-/** Toggle a plain bullet on the caret's line (leaves checkboxes alone). */
-export function toggleBullet(value: string, caret: number): Edit {
+/** Toggle a `✓ ` checkmark on the caret's line — the same marker completed to-dos
+ * fold into a day's journal entry as (see `migrateCompletedTasksToEntries`). */
+export function toggleCheck(value: string, caret: number): Edit {
   const ls = lineStartAt(value, caret);
-  const m = BULLET_PREFIX.exec(value.slice(ls));
-  return m ? removePrefix(value, ls, m[0].length, caret) : addPrefix(value, ls, '- ', caret);
+  const m = CHECK_MARK_PREFIX.exec(value.slice(ls));
+  return m ? removePrefix(value, ls, m[0].length, caret) : addPrefix(value, ls, '✓ ', caret);
 }
 
 /**

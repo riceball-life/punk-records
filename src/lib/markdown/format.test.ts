@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toggleChecklist, toggleBullet, toggleWrap } from './format';
+import { toggleChecklist, toggleCheck, toggleWrap } from './format';
 
 describe('toggleChecklist', () => {
   it('adds a checkbox to a plain line', () => {
@@ -16,15 +16,14 @@ describe('toggleChecklist', () => {
   });
 });
 
-describe('toggleBullet', () => {
-  it('adds and removes a plain bullet', () => {
-    expect(toggleBullet('milk', 4)).toEqual({ value: '- milk', caret: 6 });
-    expect(toggleBullet('- milk', 6)).toEqual({ value: 'milk', caret: 4 });
+describe('toggleCheck', () => {
+  it('adds and removes a ✓ checkmark', () => {
+    expect(toggleCheck('milk', 4)).toEqual({ value: '✓ milk', caret: 6 });
+    expect(toggleCheck('✓ milk', 6)).toEqual({ value: 'milk', caret: 4 });
   });
 
-  it('leaves checkbox lines alone (adds a bullet rather than stripping the dash)', () => {
-    // "- [ ] x" is a checkbox, not a plain bullet → bullet button adds "- "
-    expect(toggleBullet('- [ ] x', 6).value).toBe('- - [ ] x');
+  it('targets only the caret line', () => {
+    expect(toggleCheck('a\nb', 3)).toEqual({ value: 'a\n✓ b', caret: 5 });
   });
 });
 

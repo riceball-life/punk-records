@@ -29,6 +29,12 @@ export function openCalendar(): void {
   goSection('archives');
 }
 
+/** Bottom-nav Archives: always open the day list (calendar stays on the header toggle). */
+export function goArchiveDays(): void {
+  archivesView.mode = 'days';
+  goSection('archives');
+}
+
 /** True when the Archives calendar is currently on screen. */
 export function calendarShowing(): boolean {
   return (

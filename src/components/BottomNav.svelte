@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { nav, goHub, goSection } from '../lib/app/route.svelte';
+  import { nav, goHub, goSection, goArchiveDays } from '../lib/app/route.svelte';
   import { active } from '../lib/app/activeEditor.svelte';
   import { getSection } from '../lib/sections/registry';
   import type { SectionId } from '../lib/sections/types';
@@ -30,7 +30,7 @@
       class:on
       class:disabled={!s.enabled}
       style={on ? `color:${s.accent}` : undefined}
-      onclick={() => s.enabled && goSection(id)}
+      onclick={() => s.enabled && (id === 'archives' ? goArchiveDays() : goSection(id))}
       aria-label={s.label}
       aria-current={on ? 'page' : undefined}
       disabled={!s.enabled}
@@ -127,7 +127,7 @@
     justify-content: center;
     border: 0.5px solid var(--separator);
     border-radius: 999px;
-    color: var(--text);
+    color: var(--today-tint);
     background: color-mix(in srgb, var(--bg) 82%, transparent);
     backdrop-filter: saturate(1.8) blur(20px);
     -webkit-backdrop-filter: saturate(1.8) blur(20px);
