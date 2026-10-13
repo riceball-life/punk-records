@@ -127,8 +127,9 @@ should tie into the same day-oriented, cross-referenced fabric, not become islan
    how to test it and pause for feedback.
 3. Keep it green: `npm run typecheck`, `npm run test`, `npm run build` before shipping.
 4. **Commit + push proactively** after each feature (or a few small changes). `main`
-   auto-deploys to Netlify; there's no separate release step. Don't branch — direct to
-   `main`. Never commit `.env` or `.claude/settings.local.json`.
+   auto-deploys to Vercel (and Netlify in parallel as a fallback); there's no separate
+   release step. Don't branch — direct to `main`. Never commit `.env` or
+   `.claude/settings.local.json`.
 5. Verify UI changes by handing them to the owner to test (browser automation is off by
    default) — describe the exact steps to check.
 6. **Push back** on anything here you think is wrong before implementing. Don't just execute.
@@ -140,7 +141,15 @@ day, a milestone) shows up wherever it's relevant, not trapped in one screen. Ne
 plug into that fabric rather than becoming another silo.
 
 ## Deploy / ops
-- Push to `main` → Netlify builds (`npm run build`) and deploys automatically.
+- Push to `main` → **Vercel** builds (`npm run build` → `dist/`) and deploys automatically
+  (config in `vercel.json`). **Netlify** still builds from `main` in parallel as a fallback
+  (`netlify.toml`) and can be decommissioned once Vercel is trusted. Build-time `VITE_*`
+  Supabase vars are set in each host's dashboard for git-connected builds, not baked in from
+  a local `.env`.
+- Hosts are interchangeable: the app is a static PWA; the host only runs the Vite build and
+  serves `dist/` over HTTPS, and mobile/installability comes from the PWA, not the host. A
+  new host on a new domain is a new origin, so its local IndexedDB starts empty and
+  repopulates from Supabase sync on sign-in.
 - New object types need **no** Supabase schema change (generic `docs` table). The `docs`
   table + `entries` table SQL lives in `supabase/schema.sql` and must be run once in the
   Supabase project for cloud sync; the app works local-only until then.

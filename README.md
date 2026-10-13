@@ -19,29 +19,32 @@ dock — that syncs across your own devices. Works fully offline.
 A persistent **brain button** opens the **hub**: a stylized brain with tappable **lobes**
 (sections) plus a daily-reminders quick list. Sections are self-registering modules.
 
-- **Archives** — the journal + calendar. One entry per day in a smooth, windowed day-scroll
-  (lands on today) and a vertical-months calendar. Each day also shows its checklist and any
-  milestones logged that day.
+- **Archives** — the journal + calendar. One plain-text entry per day in a smooth, windowed
+  day-scroll (lands on today) and a vertical-months calendar. Days are just prose: completed
+  to-dos and logged milestones fold into that day's entry as text lines (`✓ …` / `🏅 …`).
 - **Scratch** — freeform, iOS-Notes-style notes.
-- **To-do** — checkbox-only tasks; an inbox with drag-to-reorder.
+- **To-do** — checkbox-only tasks grouped into free-form **categories** (drag across
+  categories to recategorize, drag to reorder). A checked task stays struck-through on the
+  board until day's end, then folds into that day's journal entry and leaves the list.
 - **Tracker** — personal records / benchmarks (free-form value + unit, grouped by category).
-  Updating a value can log a milestone.
+  Updating a value can log a milestone. A pinned **Protein card** tracks a running daily
+  total vs. an editable goal and folds into the day's entry as a `🍗 N g protein` line.
 - **Daily Reminders** — a recurring-habit checklist with a daily reset and a miss-streak count.
 
-**Integration already live:** a checkbox in a journal day *is* a To-do dated to that day
-(unified across the inbox and the day); completed tasks and logged milestones project into
-Archives under their day; the calendar dots journal days and milestone days.
+**Integration already live:** days aggregate as text — completed to-dos and logged
+milestones fold into that day's journal entry (`✓ …` / `🏅 …`), so Archives is a running
+log of what you did alongside what you wrote; the calendar dots journal days (accent) and
+milestone days (gold).
 
 ## Tech stack
 
 - [Svelte 5](https://svelte.dev) (runes) + [Vite](https://vitejs.dev) + TypeScript (strict)
 - [IndexedDB](https://developer.mozilla.org/docs/Web/API/IndexedDB_API) via [`idb`] for local-first storage
 - [Supabase](https://supabase.com) (Postgres + Auth + RLS) for cross-device sync (last-write-wins)
-- [`vite-plugin-pwa`] (installable PWA), [`svelte-dnd-action`] (drag), [Vitest] + `fake-indexeddb` (tests)
+- [`vite-plugin-pwa`] (installable PWA), hand-rolled pointer drag-sort (`src/lib/dnd/sortable.ts`), [Vitest] + `fake-indexeddb` (tests)
 
 [`idb`]: https://github.com/jakearchibald/idb
 [`vite-plugin-pwa`]: https://vite-pwa-org.netlify.app
-[`svelte-dnd-action`]: https://github.com/isaacHagoel/svelte-dnd-action
 [Vitest]: https://vitest.dev
 
 ## Getting started
@@ -106,8 +109,9 @@ src/
 
 ## Deployment
 
-Pushing to `main` triggers a [Netlify](https://netlify.com) build (`npm run build`) and
-deploy automatically. See [`DEPLOY.md`](DEPLOY.md).
+Pushing to `main` triggers a [Vercel](https://vercel.com) build (`npm run build` → `dist/`)
+and deploy automatically. [Netlify](https://netlify.com) still builds from `main` in
+parallel as a fallback. See [`DEPLOY.md`](DEPLOY.md).
 
 ## Status
 

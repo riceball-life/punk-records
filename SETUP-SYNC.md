@@ -26,8 +26,8 @@ installed app). Two settings:
    ```
    (Leave the existing link in too — it's a Safari fallback.)
 3. **Authentication → URL Configuration → Site URL / Redirect URLs**: add
-   `http://localhost:5173` for dev, and your deployed HTTPS URL once you have it
-   (see [DEPLOY.md](DEPLOY.md)).
+   `http://localhost:5173` for dev, and each deployed HTTPS URL once you have it — the
+   Vercel one, plus the Netlify fallback if you keep it (see [DEPLOY.md](DEPLOY.md)).
 
 ## 4. Wire the keys
 1. **Project Settings → API**: copy the **Project URL** and the **anon public** key.
