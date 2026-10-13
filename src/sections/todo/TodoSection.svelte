@@ -2,11 +2,12 @@
   import { onMount } from 'svelte';
   import TaskList from '../../components/TaskList.svelte';
   import CalendarToggle from '../../components/CalendarToggle.svelte';
-  import { todos, clearOldCompletedTasks } from '../../lib/app/stores';
+  import { todos, clearOldCompletedTasks, foldCheckLine } from '../../lib/app/stores';
   import {
     newTask,
     markTaskDone,
     markTaskOpen,
+    taskDate,
     taskInboxOrder,
     taskCategory,
     groupTasksByCategory,
@@ -58,11 +59,18 @@
     return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  // Checking a task just marks it done (it stays on the board, struck through,
-  // until end of day). Unchecking reopens it.
+  // Checking a task folds a `✓ …` line into its day's journal entry immediately
+  // (today for a board task) and the task stays on the board, struck through,
+  // until end of day. Unchecking the same day reopens it and removes the line.
   function toggle(id: string): void {
     const t = boardTasks.find((x) => x.id === id);
-    if (t) void todos.put(t.done ? markTaskOpen(t) : markTaskDone(t));
+    if (!t) return;
+    const willBeDone = !t.done;
+    // Resolve the day from the current task: an open task has no date → today;
+    // a done task resolves to its completion day.
+    const day = taskDate(t) ?? todayKey();
+    void todos.put(willBeDone ? markTaskDone(t) : markTaskOpen(t));
+    void foldCheckLine(day, t.text, willBeDone);
   }
   function edit(id: string, text: string): void {
     const t = boardTasks.find((x) => x.id === id);

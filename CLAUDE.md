@@ -34,11 +34,13 @@ Sections built so far:
   prose** now — completed to-dos and logged milestones fold into that day's entry as plain
   text lines (`✓ …` / `🏅 …`), not a separate structured checklist. (Markers are easily
   tweakable.)
-- **Scratch** — freeform, iOS-Notes-style notes (list + per-note editor).
+- **Scratch** — freeform, iOS-Notes-style notes (list + per-note editor). A note is one
+  text blob; its first line is the title (styled as such in the editor and the list).
 - **To-do** — checkbox-only tasks, grouped into free-form **categories** (drag a task
-  across categories to recategorize; drag to reorder). Checking a task keeps it on the
-  board struck-through until day's end, then it folds into that day's journal entry and
-  leaves the list.
+  across categories to recategorize; drag to reorder). Checking a task folds a `✓ …` line
+  into that day's journal entry **immediately** (a same-day uncheck removes it); the task
+  stays on the board struck-through until day's end, then the end-of-day cleanup removes the
+  board record (its line is already in Archives).
 - **Tracker** — personal records / benchmarks (free-form value + unit, grouped by
   free-form category). Updating a value optionally logs a **milestone** (appended to today's
   entry as a `🏅 …` line, and dotted gold on the calendar). A pinned **Protein card** at the
@@ -54,10 +56,11 @@ Sections built so far:
   no archive fold). Weeks start Monday.
 
 Integration already live (this is the important part, keep building on it):
-- **Days aggregate as text.** Check off a To-do → it stays on the board (struck) until end
-  of day, then folds into that day's journal entry as a `✓ …` line and leaves To-do. Logging
-  a Tracker PR appends a `🏅 …` line under today. So Archives is a running log of what you
-  actually did, alongside what you wrote — as prose, not a live structured projection. (This
+- **Days aggregate as text.** Check off a To-do → a `✓ …` line folds into that day's journal
+  entry immediately (unchecking the same day removes it); the task lingers struck on the
+  board until end of day, then the board record is cleared. Logging a Tracker PR appends a
+  `🏅 …` line under today. So Archives is a running log of what you actually did, alongside
+  what you wrote — as prose, not a live structured projection. (This
   replaced an earlier design where a journal checkbox *was* a To-do; it was deliberately
   decoupled — Archives is journal text again, To-do stands alone.)
 - **Cross-surfacing signals.** The calendar dots days with journal entries (accent) and

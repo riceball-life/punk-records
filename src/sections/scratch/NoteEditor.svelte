@@ -6,23 +6,39 @@
   let { id, onClose }: { id: string; onClose: () => void } = $props();
 
   let note: Note | undefined;
+  // The note is stored as one text blob; its first line is the title (matching
+  // `noteTitle` in the list), the rest is the body. We edit them as two fields
+  // for a real-notes-app feel, then recompose on save.
   // svelte-ignore state_referenced_locally
-  let text = $state('');
-  let textarea = $state<HTMLTextAreaElement>();
+  let title = $state('');
+  // svelte-ignore state_referenced_locally
+  let body = $state('');
+  let titleEl = $state<HTMLTextAreaElement>();
+  let bodyEl = $state<HTMLTextAreaElement>();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let dirty = false;
   let deleted = false;
 
+  function splitText(text: string): { title: string; body: string } {
+    const nl = text.indexOf('\n');
+    return nl < 0 ? { title: text, body: '' } : { title: text.slice(0, nl), body: text.slice(nl + 1) };
+  }
+  function composed(): string {
+    return body ? `${title}\n${body}` : title;
+  }
+
   onMount(async () => {
     note = await notes.get(id);
-    text = note?.text ?? '';
+    const parts = splitText(note?.text ?? '');
+    title = parts.title;
+    body = parts.body;
     await tick();
-    autosize();
-    textarea?.focus();
+    autosize(titleEl);
+    autosize(bodyEl);
+    titleEl?.focus();
   });
 
-  function autosize(): void {
-    const el = textarea;
+  function autosize(el: HTMLTextAreaElement | undefined): void {
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
@@ -37,21 +53,35 @@
   async function save(): Promise<void> {
     if (!dirty || !note) return;
     dirty = false;
-    note = await notes.put({ ...note, text });
+    note = await notes.put({ ...note, text: composed() });
   }
 
-  function onInput(e: Event): void {
-    text = (e.currentTarget as HTMLTextAreaElement).value;
+  function onTitleInput(e: Event): void {
+    title = (e.currentTarget as HTMLTextAreaElement).value;
     schedule();
-    autosize();
+    autosize(titleEl);
+  }
+  function onBodyInput(e: Event): void {
+    body = (e.currentTarget as HTMLTextAreaElement).value;
+    schedule();
+    autosize(bodyEl);
+  }
+
+  // Enter in the title jumps to the body instead of inserting a newline, so the
+  // title stays a single logical line (the first line of the stored text).
+  function onTitleKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      bodyEl?.focus();
+    }
   }
 
   /** Persist on the way out; discard a note left blank (iOS-Notes behavior). */
   async function flushAndCleanup(): Promise<void> {
     if (timer) clearTimeout(timer);
     if (deleted || !note) return;
-    if (text.trim() === '') await notes.remove(note.id);
-    else if (dirty) await notes.put({ ...note, text });
+    if (composed().trim() === '') await notes.remove(note.id);
+    else if (dirty) await notes.put({ ...note, text: composed() });
   }
 
   onDestroy(() => void flushAndCleanup());
@@ -82,9 +112,21 @@
 
 <div class="note-scroll">
   <textarea
-    bind:this={textarea}
-    value={text}
-    oninput={onInput}
+    bind:this={titleEl}
+    class="title"
+    value={title}
+    oninput={onTitleInput}
+    onkeydown={onTitleKeydown}
+    placeholder="Title"
+    rows="1"
+    spellcheck="true"
+    autocapitalize="sentences"
+  ></textarea>
+  <textarea
+    bind:this={bodyEl}
+    class="body"
+    value={body}
+    oninput={onBodyInput}
     placeholder="Note"
     rows="1"
     spellcheck="true"
@@ -152,11 +194,23 @@
     background: transparent;
     padding: 0;
     margin: 0;
-    line-height: 1.5;
     overflow: hidden;
     color: var(--text);
   }
   textarea::placeholder {
     color: var(--text-placeholder);
+  }
+
+  /* First line reads as a note title; the rest is body copy. */
+  .title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+  .body {
+    font-size: 16px;
+    line-height: 1.5;
+    margin-top: 6px;
   }
 </style>

@@ -57,23 +57,31 @@ export async function appendToTodayEntry(line: string): Promise<void> {
 }
 
 /**
- * Toggle a Daily Goal's `✓ <goalText>` line in *today's* journal entry — checking
- * a hub Daily Goal adds it, a same-day uncheck removes it (see `foldGoalLine`).
+ * Toggle a `✓ <text>` line in a given day's journal entry — checking a Daily Goal
+ * or a To-do adds it, unchecking removes it (idempotent; see `foldGoalLine`).
  * Flushes the pending edit first so we don't race the debounced autosave, then
  * invalidates so a later Archives mount reloads the new text.
  */
-export async function foldGoalToday(goalText: string, done: boolean): Promise<void> {
+export async function foldCheckLine(day: string, text: string, done: boolean): Promise<void> {
   await entryStore.flush();
-  const day = todayKey();
-  const text = (await repo.get(day))?.text ?? '';
-  await repo.put(day, foldGoalLine(text, goalText, done));
+  const current = (await repo.get(day))?.text ?? '';
+  await repo.put(day, foldGoalLine(current, text, done));
   entryStore.invalidate();
+}
+
+/** Toggle a Daily Goal's `✓ …` line in *today's* journal entry. */
+export async function foldGoalToday(goalText: string, done: boolean): Promise<void> {
+  await foldCheckLine(todayKey(), goalText, done);
 }
 
 /**
  * "End of day" cleanup: a checked-off to-do stays on the board through the day it
- * was completed; once that day has passed, fold it into that day's journal entry
- * (as a `✓ …` line) and delete the task. Safe to call repeatedly (idempotent).
+ * was completed; once that day has passed, remove it from the board. Its `✓ …`
+ * line was already folded into that day's journal entry when it was checked (see
+ * `toggle` in TodoSection), so we re-assert the line **idempotently** here —
+ * `foldGoalLine(..., true)` strips-then-appends, so it never duplicates and also
+ * catches any task completed under an older build that folded only at day's end.
+ * Safe to call repeatedly.
  */
 export async function clearOldCompletedTasks(): Promise<void> {
   const today = todayKey();
@@ -96,12 +104,12 @@ export async function clearOldCompletedTasks(): Promise<void> {
     tasks.sort(
       (a, b) => (a.doneAt ?? '').localeCompare(b.doneAt ?? '') || a.createdAt.localeCompare(b.createdAt),
     );
-    const lines = tasks
-      .map((t) => t.text.trim())
-      .filter(Boolean)
-      .map((text) => `✓ ${text}`)
-      .join('\n');
-    if (lines) await appendEntryLine(day, lines);
+    let text = (await repo.get(day))?.text ?? '';
+    for (const t of tasks) {
+      const label = t.text.trim();
+      if (label) text = foldGoalLine(text, label, true);
+    }
+    await repo.put(day, text);
     for (const t of tasks) await todos.remove(t.id);
   }
   entryStore.invalidate();
