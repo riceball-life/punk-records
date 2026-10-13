@@ -11,14 +11,16 @@
   import { getSection } from '../lib/sections/registry';
   import type { SectionId } from '../lib/sections/types';
   import { goSection } from '../lib/app/route.svelte';
-  import { reminders, settings } from '../lib/app/stores';
+  import { reminders, settings, foldGoalToday } from '../lib/app/stores';
   import {
     newReminder,
     isDoneOn,
     missCount,
     markDone,
     markUndone,
+    reminderCadence,
     type Reminder,
+    type Cadence,
   } from '../lib/reminders/types';
   import { todayKey } from '../lib/date/dateUtils';
   import { currentTheme, setTheme, type Theme } from '../lib/app/theme';
@@ -49,16 +51,27 @@
     setTheme(theme);
   }
 
-  // --- daily reminders (hub quick list) --------------------------------------
+  // --- hub recurring lists: Daily Goals / Weekly / Monthly reminders ---------
   let items = $state<Reminder[]>([]);
-  // Recomputed on visibility so the daily reset / miss-streak stays correct if
+  // Recomputed on visibility so the period reset / miss-streak stays correct if
   // the app is left open across midnight.
   let today = $state(todayKey());
 
-  // Raw records → what the checklist renders: done-today + red miss-streak badge.
-  const displayItems = $derived(
-    items.map((r) => ({ id: r.id, text: r.text, done: isDoneOn(r, today), badge: missCount(r, today) })),
-  );
+  // Records of one cadence → what a ChecklistView renders. Only the daily list
+  // ("Daily Goals") shows the red miss-streak badge; weekly/monthly show none.
+  function displayFor(cadence: Cadence) {
+    return items
+      .filter((r) => reminderCadence(r) === cadence)
+      .map((r) => ({
+        id: r.id,
+        text: r.text,
+        done: isDoneOn(r, today),
+        badge: cadence === 'daily' ? missCount(r, today) : 0,
+      }));
+  }
+  const dailyItems = $derived(displayFor('daily'));
+  const weeklyItems = $derived(displayFor('weekly'));
+  const monthlyItems = $derived(displayFor('monthly'));
 
   async function load(): Promise<void> {
     const all = await reminders.list();
@@ -81,14 +94,18 @@
   function toggle(id: string): void {
     const r = items.find((x) => x.id === id);
     if (!r) return;
-    void reminders.put(isDoneOn(r, today) ? markUndone(r) : markDone(r, today));
+    const willBeDone = !isDoneOn(r, today);
+    void reminders.put(willBeDone ? markDone(r, today) : markUndone(r));
+    // Daily Goals fold their checkmark into today's journal (checking adds the
+    // `✓ …` line, a same-day uncheck removes it). Weekly/monthly don't archive.
+    if (reminderCadence(r) === 'daily') void foldGoalToday(r.text, willBeDone);
   }
   function edit(id: string, text: string): void {
     const r = items.find((x) => x.id === id);
     if (r) void reminders.put({ ...r, text });
   }
-  function add(text: string): void {
-    void reminders.put(newReminder(text));
+  function add(text: string, cadence: Cadence): void {
+    void reminders.put(newReminder(text, cadence));
   }
   function remove(id: string): void {
     void reminders.remove(id);
@@ -128,13 +145,37 @@
   </div>
 
   <section class="reminders">
-    <h2>Daily Reminders</h2>
+    <h2>Daily Goals</h2>
     <ChecklistView
-      items={displayItems}
-      placeholder="New daily reminder"
+      items={dailyItems}
+      placeholder="New daily goal"
       onToggle={toggle}
       onEdit={edit}
-      onAdd={add}
+      onAdd={(text) => add(text, 'daily')}
+      onDelete={remove}
+    />
+  </section>
+
+  <section class="reminders">
+    <h2>Weekly Reminders</h2>
+    <ChecklistView
+      items={weeklyItems}
+      placeholder="New weekly reminder"
+      onToggle={toggle}
+      onEdit={edit}
+      onAdd={(text) => add(text, 'weekly')}
+      onDelete={remove}
+    />
+  </section>
+
+  <section class="reminders">
+    <h2>Monthly Reminders</h2>
+    <ChecklistView
+      items={monthlyItems}
+      placeholder="New monthly reminder"
+      onToggle={toggle}
+      onEdit={edit}
+      onAdd={(text) => add(text, 'monthly')}
       onDelete={remove}
     />
   </section>

@@ -8,7 +8,7 @@ import { createRemoteSource } from '../sync/remote';
 import { createSyncEngine, type SyncEngine } from '../sync/syncEngine';
 import { createCollection } from '../sync/collection';
 import { todayKey } from '../date/dateUtils';
-import type { Reminder } from '../reminders/types';
+import { foldGoalLine, type Reminder } from '../reminders/types';
 import type { Note } from '../notes/types';
 import { taskDate, taskOrder, type Task } from '../todos/types';
 import type { Benchmark } from '../tracker/types';
@@ -53,6 +53,20 @@ async function appendEntryLine(day: string, line: string): Promise<void> {
 export async function appendToTodayEntry(line: string): Promise<void> {
   await entryStore.flush();
   await appendEntryLine(todayKey(), line);
+  entryStore.invalidate();
+}
+
+/**
+ * Toggle a Daily Goal's `✓ <goalText>` line in *today's* journal entry — checking
+ * a hub Daily Goal adds it, a same-day uncheck removes it (see `foldGoalLine`).
+ * Flushes the pending edit first so we don't race the debounced autosave, then
+ * invalidates so a later Archives mount reloads the new text.
+ */
+export async function foldGoalToday(goalText: string, done: boolean): Promise<void> {
+  await entryStore.flush();
+  const day = todayKey();
+  const text = (await repo.get(day))?.text ?? '';
+  await repo.put(day, foldGoalLine(text, goalText, done));
   entryStore.invalidate();
 }
 

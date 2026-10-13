@@ -46,8 +46,12 @@ Sections built so far:
   the day's total folds into that day's journal entry as a `🍗 N g protein` line (`✓` when the
   goal is met), which is how protein history shows up in Archives. Protein is a per-day
   running total (`protein:<day>` records), distinct from a dateless benchmark.
-- **Daily Reminders** (on the hub) — a quick recurring-habit checklist with a daily reset
-  and a red miss-streak counter.
+- **Daily Goals / Weekly / Monthly** (on the hub) — three recurring-habit checklists on one
+  `reminders` collection, discriminated by a `cadence` field. Each auto-resets at the start
+  of its period (derived from `lastDoneDate`, no nightly job). **Daily Goals** keeps a red
+  miss-streak counter *and* folds a `✓ …` line into today's journal entry when checked (a
+  same-day uncheck removes it); **Weekly/Monthly Reminders** are plain checklists (no streak,
+  no archive fold). Weeks start Monday.
 
 Integration already live (this is the important part, keep building on it):
 - **Days aggregate as text.** Check off a To-do → it stays on the board (struck) until end
