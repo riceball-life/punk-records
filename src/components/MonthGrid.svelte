@@ -39,7 +39,7 @@
         >
           <span class="num">{dayNum(cell)}</span>
           <span class="dots" aria-hidden="true">
-            {#if entrySet.has(cell)}<span class="dot entry"></span>{/if}
+            {#if entrySet.has(cell)}<span class="dot entry" class:future={cell > today}></span>{/if}
             {#if milestoneSet.has(cell)}<span class="dot milestone"></span>{/if}
           </span>
         </button>
@@ -102,21 +102,26 @@
   /* Dot row beneath the number (iOS Calendar style). Always present so day-cell
      heights stay uniform whether or not there are dots. */
   .dots {
-    height: 6px;
+    height: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
   }
 
   .dot {
-    width: 6px;
-    height: 6px;
+    width: 9px;
+    height: 9px;
     border-radius: 999px;
   }
 
+  /* Entry dot: green for past & today, yellow for future-dated entries. */
   .dot.entry {
-    background: var(--entry-tint);
+    background: var(--entry-past-tint);
+  }
+
+  .dot.entry.future {
+    background: var(--entry-future-tint);
   }
 
   /* Days with a logged milestone: a gold dot. */

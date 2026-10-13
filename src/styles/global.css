@@ -17,6 +17,8 @@
   --accent-text: #ffffff;
   --today-tint: #f5479a;
   --entry-tint: #f5479a; /* entry-day dots share the pink accent */
+  --entry-past-tint: #1fa971; /* calendar entry dot, past & today (green) */
+  --entry-future-tint: #d99200; /* calendar entry dot, future dates (yellow) */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,6 +36,8 @@
     --accent-text: #ffffff;
     --today-tint: #ff77b7;
     --entry-tint: #ff77b7;
+    --entry-past-tint: #30c585;
+    --entry-future-tint: #f2c23e;
   }
 }
 
@@ -52,6 +56,8 @@
   --accent-text: #ffffff;
   --today-tint: #ff77b7;
   --entry-tint: #ff77b7;
+  --entry-past-tint: #30c585;
+  --entry-future-tint: #f2c23e;
 }
 
 :root[data-theme='light'] {
@@ -67,6 +73,8 @@
   --accent-text: #ffffff;
   --today-tint: #f5479a;
   --entry-tint: #f5479a;
+  --entry-past-tint: #1fa971;
+  --entry-future-tint: #d99200;
 }
 
 * {

@@ -179,6 +179,11 @@
       onDelete={remove}
     />
   </section>
+
+  <!-- Trailing spacer so the last list clears the fixed bottom nav. A flex
+       column with overflow doesn't reliably honor padding-bottom in the scroll
+       extent (Safari/Chrome), so reserve the space with a real child instead. -->
+  <div class="nav-spacer" aria-hidden="true"></div>
 </div>
 
 <style>
@@ -234,12 +239,19 @@
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    /* Leave room for the fixed brain button at the bottom. */
-    padding: 20px 20px calc(96px + env(safe-area-inset-bottom));
+    padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
+  }
+
+  /* Reserves room under the last list for the fixed bottom nav (bar + raised
+     brain). A child, not padding-bottom, so the scroll extent is reliable. */
+  .nav-spacer {
+    flex: none;
+    width: 100%;
+    height: calc(84px + env(safe-area-inset-bottom));
   }
 
   .brain-wrap {
