@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import BrainHub from './components/BrainHub.svelte';
-  import BrainButton from './components/BrainButton.svelte';
+  import BottomNav from './components/BottomNav.svelte';
   import SignIn from './components/SignIn.svelte';
   import FormatBar from './components/FormatBar.svelte';
   import {
@@ -96,8 +96,8 @@
       {:else if SectionComponent}
         <SectionComponent />
       {/if}
-      <!-- Global chrome: return-to-hub button + the editing formatting toolbar. -->
-      <BrainButton />
+      <!-- Global chrome: bottom section nav (brain hub at center) + editing toolbar. -->
+      <BottomNav />
       <FormatBar />
     {/if}
 

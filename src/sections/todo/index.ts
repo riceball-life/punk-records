@@ -1,5 +1,6 @@
 import type { SectionModule } from '../../lib/sections/types';
 import TodoSection from './TodoSection.svelte';
+import TodoIcon from './TodoIcon.svelte';
 
 /** To-do = checkbox-only tasks that auto-archive into Archives on completion. */
 export const todo: SectionModule = {
@@ -7,5 +8,6 @@ export const todo: SectionModule = {
   label: 'To-do',
   accent: '#2fa7b5',
   enabled: true,
+  icon: TodoIcon,
   component: TodoSection,
 };

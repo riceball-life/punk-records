@@ -16,6 +16,12 @@ export interface SectionModule {
   /** The section's identity color — tints its lobe on the brain. */
   accent: string;
   /**
+   * The section's glyph: a self-contained inline-SVG component (24×24, drawn with
+   * `currentColor`). Shown in the bottom navigation bar. Each section owns its own
+   * so adding a section stays a single registry entry.
+   */
+  icon: Component;
+  /**
    * When false, the lobe renders dimmed and non-navigable ("soon"). Lets us
    * ship the hub frame before every section's insides exist.
    */

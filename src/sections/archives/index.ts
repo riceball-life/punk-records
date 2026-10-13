@@ -1,5 +1,6 @@
 import type { SectionModule } from '../../lib/sections/types';
 import ArchivesSection from './ArchivesSection.svelte';
+import ArchivesIcon from './ArchivesIcon.svelte';
 
 /** Archives = the existing journal day-scroll + calendar, wrapped as a section. */
 export const archives: SectionModule = {
@@ -7,5 +8,6 @@ export const archives: SectionModule = {
   label: 'Archives',
   accent: '#f5479a',
   enabled: true,
+  icon: ArchivesIcon,
   component: ArchivesSection,
 };

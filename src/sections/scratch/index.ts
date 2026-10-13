@@ -1,5 +1,6 @@
 import type { SectionModule } from '../../lib/sections/types';
 import ScratchSection from './ScratchSection.svelte';
+import ScratchIcon from './ScratchIcon.svelte';
 
 /** Scratch = freeform iOS-Notes-style notes (list + per-note editor). */
 export const scratch: SectionModule = {
@@ -7,5 +8,6 @@ export const scratch: SectionModule = {
   label: 'Scratch',
   accent: '#7c6cf0',
   enabled: true,
+  icon: ScratchIcon,
   component: ScratchSection,
 };
